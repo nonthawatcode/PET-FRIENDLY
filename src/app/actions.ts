@@ -232,8 +232,9 @@ export async function uploadLogo(_: ActionResult | null, fd: FormData): Promise<
   if (file.size > 1_000_000) return { ok: false, error: 'ไฟล์ใหญ่เกิน 1 MB' }
   const sb = await createClient()
   const path = `logo-${Date.now()}.${file.type === 'image/svg+xml' ? 'svg' : file.type.split('/')[1]}`
-  const { error } = await sb.storage.from('brand').upload(path, file, { contentType: file.type, upsert: true })
-  if (error) return { ok: false, error: error.message }
+  // Each upload gets a new file name, so no overwrite (overwrite needs extra storage permissions).
+  const { error } = await sb.storage.from('brand').upload(path, file, { contentType: file.type })
+  if (error) return { ok: false, error: /row-level security/i.test(error.message) ? 'ไม่มีสิทธิ์อัปโหลดโลโก้ (ตั้งค่าฐานข้อมูลยังไม่ครบ)' : 'อัปโหลดไม่สำเร็จ ลองใหม่อีกครั้ง' }
   const url = sb.storage.from('brand').getPublicUrl(path).data.publicUrl
   const { error: e2 } = await sb.from('app_settings').upsert({ key: 'logo_url', value: url, updated_at: new Date().toISOString() })
   if (e2) return { ok: false, error: errorText(e2) }
