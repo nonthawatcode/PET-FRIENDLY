@@ -80,7 +80,10 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
 
   const [camOpen, setCamOpen] = useState(false)
   const [camCode, setCamCode] = useState<string | null>(null)
-  const focus = () => { if (!camOpenRef.current) input.current?.focus({ preventScroll: true }) }
+  // Keep the field ready for a USB/Bluetooth scanner on computers. On phones and tablets
+  // don't focus it by itself, otherwise the on-screen keyboard pops up; tap the field to type.
+  const isTouch = () => typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches
+  const focus = () => { if (!camOpenRef.current && !isTouch()) input.current?.focus({ preventScroll: true }) }
   const camOpenRef = useRef(false)
   camOpenRef.current = camOpen
   useEffect(() => {
