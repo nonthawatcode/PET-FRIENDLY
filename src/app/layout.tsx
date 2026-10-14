@@ -10,15 +10,18 @@ export const metadata: Metadata = {
   description: 'ระบบหลังบ้าน แพ็กสินค้า ออเดอร์ และสต็อก',
   robots: { index: false, follow: false },
 }
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' }
+// Locked like a native app: no pinch zoom, no double-tap zoom, no sideways drift.
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover' }
 
 // Applies the saved theme before first paint so there is no flash.
 const themeScript = `try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}`
+// iPhone Safari ignores user-scalable=no, so block its pinch gesture directly.
+const noZoomScript = `['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},{passive:false})});document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false})`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className={`${anuphan.variable} ${mono.variable}`} suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript + ';' + noZoomScript }} /></head>
       <body>{children}</body>
     </html>
   )
