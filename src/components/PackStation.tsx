@@ -5,7 +5,8 @@ import { bindLabelCode, confirmPack, parkPack, startPack } from '@/app/actions'
 import { PLATFORM } from '@/lib/format'
 import type { Order } from '@/lib/types'
 import { PlatformMark } from './bits'
-import { IconCheck, IconScan } from './icons'
+import { CameraScanner } from './CameraScanner'
+import { IconCamera, IconCheck, IconScan } from './icons'
 
 type Product = { id: string; sku: string; option_name: string }
 type Msg = { type: 'ok' | 'bad' | 'warn'; text: string; sub?: string; bindCode?: string; id?: number }
@@ -77,7 +78,11 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
   const stepFrom = lastPhase.current
   useEffect(() => { prevPct.current = pct; lastPhase.current = phase })
 
-  const focus = () => input.current?.focus({ preventScroll: true })
+  const [camOpen, setCamOpen] = useState(false)
+  const [camCode, setCamCode] = useState<string | null>(null)
+  const focus = () => { if (!camOpenRef.current) input.current?.focus({ preventScroll: true }) }
+  const camOpenRef = useRef(false)
+  camOpenRef.current = camOpen
   useEffect(() => {
     focus()
     const onClick = (e: MouseEvent) => {
@@ -185,6 +190,9 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
 
         <div className="scanbox">
           <IconScan />
+          <button type="button" className="cambtn" onClick={() => { input.current?.blur(); setCamCode(null); setMsg(null); setCamOpen(true) }} aria-label="สแกนด้วยกล้องมือถือ" title="สแกนด้วยกล้องมือถือ">
+            <IconCamera /><span>กล้อง</span>
+          </button>
           <input ref={input} className="scaninput" autoComplete="off" spellCheck={false} aria-label="ช่องสแกน" disabled={busy}
             placeholder={phase === 1 ? 'สแกนบาร์โค้ดใบปะหน้า…' : phase === 2 ? 'สแกน Data Matrix สินค้าทีละชิ้น…' : phase === 3 ? 'กด Enter เพื่อยืนยันแพ็ก' : 'สแกนใบปะหน้าถัดไป…'}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const v = e.currentTarget.value; e.currentTarget.value = ''; handle(v) } }}
@@ -238,6 +246,14 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
         )}
       </section>
 
+      {camOpen && (phase === 1 || phase === 2 || phase === 4) && (
+        <CameraScanner
+          hint={phase === 2 ? `สแกนสินค้า · ${got}/${total} ชิ้น` : 'สแกนบาร์โค้ดใบปะหน้า'}
+          lastResult={msg ? { text: msg.text, tone: msg.type } : camCode ? { text: `อ่านได้ ${camCode}`, tone: 'ok' } : null}
+          onCode={(c) => { setCamCode(c); handle(c) }}
+          onClose={() => setCamOpen(false)}
+        />
+      )}
       {demoCodes.length > 0 && (
         <details className="demo">
           <summary>ทดลองสแกน (ออเดอร์ตัวอย่าง)</summary>

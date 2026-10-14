@@ -42,3 +42,6 @@ export const IconLock = ({ size = 18, ...p }: P) => (
 export const IconChevron = ({ size = 16, ...p }: P) => (
   <svg className="chev" {...base(size, { strokeWidth: 2.4, ...p })}><path d="m9 6 6 6-6 6" /></svg>
 )
+export const IconCamera = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 2, ...p })}><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="3.5" /></svg>
+)
