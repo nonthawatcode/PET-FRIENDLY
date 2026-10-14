@@ -78,6 +78,10 @@ const ERRORS: Record<string, string> = {
   return_exceeds_order: 'จำนวนคืนเกินจำนวนที่สั่ง',
   sku_locked: 'SKU ถูกพิมพ์ลงบรรจุภัณฑ์แล้ว เปลี่ยนไม่ได้',
   no_listings: 'ผูก SKU ของ Marketplace กับสินค้าก่อนสร้างออเดอร์ตัวอย่าง',
+  courier_required: 'เลือกขนส่งก่อน',
+  photo_required: 'ถ่ายรูปพัสดุอย่างน้อย 1 รูป',
+  nothing_selected: 'เลือกกล่องที่จะส่งอย่างน้อย 1 กล่อง',
+  nothing_to_hand_over: 'กล่องที่เลือกถูกส่งไปแล้ว หรือยังไม่ได้แพ็ก',
   '23505': 'ข้อมูลนี้มีอยู่แล้ว',
 }
 
@@ -87,3 +91,5 @@ export function errorText(e: { message?: string; code?: string } | string | null
   const code = typeof e === 'string' ? '' : e.code ?? ''
   return ERRORS[msg] ?? ERRORS[code] ?? (msg || 'เกิดข้อผิดพลาด')
 }
+
+export const COURIERS = ['SPX Express', 'Flash Express', 'J&T Express', 'Kerry Express', 'Lazada Express', 'ไปรษณีย์ไทย', 'Best Express']

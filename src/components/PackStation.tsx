@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { bindLabelCode, confirmPack, parkPack, startPack } from '@/app/actions'
 import { PLATFORM, baht } from '@/lib/format'
@@ -283,6 +284,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
             <h3>แพ็กเสร็จ พร้อมส่ง</h3>
             <div className="mono small">{done.external_order_id}</div>
             <div className="xs muted">{total || done.order_items.reduce((a, i) => a + i.quantity, 0)} ชิ้น · ตัดสต็อกแล้ว · {PLATFORM[done.platform]} {done.tracking_number}</div>
+            <Link className="link" href="/?handover=1" scroll={false}>ส่งขนส่ง →</Link>
           </div>
         ) : (
           <div className="hint"><span>ระบบตัดสต็อกตอนยืนยันแพ็กเท่านั้น</span>{nextOrderId && <span>ถัดไปในคิว <span className="mono">{nextOrderId}</span></span>}</div>

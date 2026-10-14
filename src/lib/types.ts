@@ -50,6 +50,7 @@ export interface Order {
   packed_at: string | null
   packed_by: string | null
   shipped_at: string | null
+  handover_id: string | null
   order_items: OrderItem[]
 }
 

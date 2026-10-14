@@ -4,7 +4,7 @@ import { bkkStart } from './format'
 import type { Movement, Order, OrderStatus, Platform, ProductStock } from './types'
 
 const ORDER_SELECT =
-  'id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))'
+  'id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, handover_id, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))'
 
 export async function getShell() {
   const sb = await createClient()
@@ -45,6 +45,22 @@ export async function getQueue() {
     .limit(200)
   if (error) throw error
   return (data ?? []) as unknown as Order[]
+}
+
+export async function getPacked() {
+  const sb = await createClient()
+  const { data, error } = await sb.from('orders').select(ORDER_SELECT).eq('status', 'packed').order('packed_at', { ascending: true }).limit(300)
+  if (error) throw error
+  return (data ?? []) as unknown as Order[]
+}
+
+export async function getHandover(id: string) {
+  const sb = await createClient()
+  const { data } = await sb.from('handovers').select('id, courier, photo_paths, note, created_at, profiles(display_name)').eq('id', id).maybeSingle()
+  if (!data) return null
+  const h = data as unknown as { id: string; courier: string; photo_paths: string[]; note: string | null; created_at: string; profiles: { display_name: string } | null }
+  const { data: signed } = await sb.storage.from('handover').createSignedUrls(h.photo_paths, 60 * 60)
+  return { ...h, photos: (signed ?? []).map((x) => x.signedUrl).filter(Boolean) as string[] }
 }
 
 export async function getPackStats() {

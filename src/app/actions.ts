@@ -80,6 +80,15 @@ export async function bindLabelCode(code: string, externalOrderId: string): Prom
   return rpc('bind_label_code', { p_code: code, p_order: matches[0].id })
 }
 
+// ---------------------------------------------------------------- courier handover
+export async function handOver(orderIds: string[], courier: string, photoPaths: string[], note?: string): Promise<ActionResult> {
+  const sb = await createClient()
+  const { data, error } = await sb.rpc('hand_over', { p_orders: orderIds, p_courier: courier, p_photos: photoPaths, p_note: note ?? null })
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: `ส่งให้ ${courier} แล้ว ${(data as { count: number }).count} กล่อง` }
+}
+
 // ---------------------------------------------------------------- order follow-up
 export async function unpackOrder(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return rpc('unpack_order', { p_order: str(fd, 'order_id'), p_reason: str(fd, 'reason') })

@@ -1,5 +1,5 @@
-import { markHandedOver, recordReturn, unpackOrder } from '@/app/actions'
-import { getOrder } from '@/lib/data'
+import { recordReturn, unpackOrder } from '@/app/actions'
+import { getHandover, getOrder } from '@/lib/data'
 import { PLATFORM, baht, when } from '@/lib/format'
 import { ActionForm, Submit } from './ActionForm'
 import { PlatformMark, Status } from './bits'
@@ -13,6 +13,7 @@ export async function OrderSheet({ id, closeHref }: { id: string; closeHref: str
     return <SheetFrame closeHref={closeHref} head={<h2>ไม่พบออเดอร์</h2>}><p className="muted">ออเดอร์นี้อาจถูกลบหรือไม่มีสิทธิ์เข้าถึง</p></SheetFrame>
   }
   const { order: o, events, packedByName } = data
+  const ho = o.handover_id ? await getHandover(o.handover_id) : null
   const unmapped = o.order_items.filter((i) => !i.product_id)
   const open = o.status === 'pending' || o.status === 'packing'
   const canReturn = o.status === 'packed' || o.status === 'shipped'
@@ -31,8 +32,7 @@ export async function OrderSheet({ id, closeHref }: { id: string; closeHref: str
         open && !unmapped.length && o.marketplace_state !== 'unpaid' ? (
           <><span className="small muted">สแกนใบปะหน้าที่สถานีแพ็กเพื่อเริ่ม</span><Link className="btn pri" href="/">ไปสถานีแพ็ก</Link></>
         ) : o.status === 'packed' ? (
-          <><span className="small muted">ขนส่งมารับพัสดุแล้ว?</span>
-            <ActionForm action={markHandedOver}><input type="hidden" name="order_id" value={o.id} /><Submit>ส่งมอบขนส่งแล้ว</Submit></ActionForm></>
+          <><span className="small muted">ยังไม่ได้ส่งขนส่ง</span><Link className="btn ink" href={`/?handover=1&o=${o.id}`}>ส่งขนส่ง</Link></>
         ) : undefined
       }
     >
@@ -53,6 +53,24 @@ export async function OrderSheet({ id, closeHref }: { id: string; closeHref: str
         <div className="rowi noicon"><span className="k">สั่งเมื่อ</span><span className="v">{when(o.ordered_at)}</span></div>
         {o.packed_at && <div className="rowi noicon"><span className="k">แพ็กโดย</span><span className="v">{packedByName ?? '—'} · {when(o.packed_at)}</span></div>}
       </div>
+
+      {ho && (
+        <div className="sect">
+          <span className="cap">ส่งขนส่งแล้ว</span>
+          <div className="group kvg">
+            <div className="rowi noicon"><span className="k">ขนส่ง</span><span className="v"><b>{ho.courier}</b></span></div>
+            <div className="rowi noicon"><span className="k">ส่งเมื่อ</span><span className="v">{when(ho.created_at)}{ho.profiles?.display_name && ` · ${ho.profiles.display_name}`}</span></div>
+          </div>
+          <div className="photos">
+            {ho.photos.map((u, i) => (
+              <a key={u} className="photo" href={u} target="_blank" rel="noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u} alt={`รูปพัสดุ ${i + 1}`} />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="sect">
         <span className="cap">สินค้า</span>

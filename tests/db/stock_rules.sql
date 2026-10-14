@@ -155,4 +155,23 @@ select pg_temp.check(not exists (
 set role authenticated;
 select pg_temp.check(public.create_sample_order() is not null, 'sample order created');
 reset role;
+-- 14. Hand over to courier: needs photo + courier; only packed orders move to shipped.
+set role authenticated;
+do $$ begin
+  perform public.hand_over(array[(select id from orders where external_order_id='SO-1')], 'Flash Express', array[]::text[]);
+  raise exception 'FAIL: handover without photo';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  handover needs a photo';
+end $$;
+reset role;
+select public.ingest_order('shopee', 'SO-HO', now(), '[{"sku":"SP-FDP01","qty":1}]', null, null, 890, 'ready', 'READY_TO_SHIP', 'TH-HO', 'sample');
+set role authenticated;
+select public.start_pack('TH-HO');
+select public.confirm_pack((select id from orders where external_order_id='SO-HO'), jsonb_build_object((select id from products where sku='PF-FDP-01')::text, 1));
+select pg_temp.check((public.hand_over(array[(select id from orders where external_order_id='SO-HO'), (select id from orders where external_order_id='TT-1')],
+  'Flash Express', array['2026-10-14/a.jpg']) ->> 'count')::int = 1, 'handover marks only the packed order');
+select pg_temp.check((select status = 'shipped' and handover_id is not null from orders where external_order_id='SO-HO'), 'packed order is now shipped with handover');
+select pg_temp.check((select status = 'pending' from orders where external_order_id='TT-1'), 'unpacked order untouched');
+reset role;
 \echo ALL TESTS PASSED
