@@ -42,6 +42,40 @@ export function Dock({ pending, low, initials }: { pending: number; low: number;
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', onResize) }
   })
 
+  // iPhone: hide the dock while the keyboard is up (it covers the fields), and after the keyboard
+  // closes make Safari re-place the dock, which it sometimes leaves floating mid-screen.
+  useEffect(() => {
+    const isField = (t: EventTarget | null) =>
+      t instanceof HTMLElement && (t.matches('textarea,select,[contenteditable="true"]') ||
+        (t instanceof HTMLInputElement && !['checkbox', 'radio', 'file', 'button', 'submit', 'range', 'color'].includes(t.type)))
+    let timer = 0
+    const resync = () => {
+      const el = dock.current
+      if (!el) return
+      el.style.position = 'absolute'
+      void el.offsetHeight
+      el.style.position = ''
+      window.scrollTo(window.scrollX, window.scrollY)
+    }
+    const onIn = (e: FocusEvent) => { if (isField(e.target)) { clearTimeout(timer); dock.current?.classList.add('typing') } }
+    const onOut = (e: FocusEvent) => {
+      if (!isField(e.target)) return
+      clearTimeout(timer)
+      timer = window.setTimeout(() => { if (!isField(document.activeElement)) { dock.current?.classList.remove('typing'); resync() } }, 250)
+    }
+    const vv = window.visualViewport
+    const onVv = () => { if (!isField(document.activeElement)) resync() }
+    document.addEventListener('focusin', onIn)
+    document.addEventListener('focusout', onOut)
+    vv?.addEventListener('resize', onVv)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('focusin', onIn)
+      document.removeEventListener('focusout', onOut)
+      vv?.removeEventListener('resize', onVv)
+    }
+  }, [])
+
   const badge = [0, pending, low, 0]
   return (
     <nav ref={dock} className={`dock ${ready ? '' : 'noanim'}`} aria-label="เมนูหลัก">
