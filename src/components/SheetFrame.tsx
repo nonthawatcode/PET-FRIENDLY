@@ -13,7 +13,6 @@ export function SheetFrame({
   const router = useRouter()
   const sheet = useRef<HTMLElement>(null)
   const scrim = useRef<HTMLAnchorElement>(null)
-  const body = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Esc also means "stop loading" to the browser, which can cancel the navigation we start,
@@ -27,12 +26,11 @@ export function SheetFrame({
     return () => window.removeEventListener('keydown', onKey)
   }, [closeHref, router])
 
-  // Swipe down to close (phones): from the handle/header, or from the content when it is
-  // scrolled to the top.
+  // Swipe down to close (phones): only from the top edge of the sheet (handle and header).
   useEffect(() => {
     const el = sheet.current
     if (!el) return
-    let startY = 0, startT = 0, dy = 0, active = false, fromBody = false
+    let startY = 0, startT = 0, dy = 0, active = false
 
     const set = (y: number, anim: boolean) => {
       el.style.transition = anim ? 'transform .25s cubic-bezier(.2,.8,.2,1)' : 'none'
@@ -47,16 +45,13 @@ export function SheetFrame({
     const onStart = (e: TouchEvent) => {
       if (isDesktop() || e.touches.length !== 1) return
       const t = e.target as HTMLElement
-      fromBody = !!body.current?.contains(t)
-      if (fromBody && body.current!.scrollTop > 0) return
-      if (t.closest('input,select,textarea')) return
+      if (!t.closest('.grab-zone,.sheet-h') || t.closest('input,select,textarea,a,button')) return
       startY = e.touches[0].clientY; startT = Date.now(); dy = 0; active = true
     }
     const onMove = (e: TouchEvent) => {
       if (!active) return
       dy = e.touches[0].clientY - startY
-      if (dy <= 0) { if (fromBody) { active = false; set(0, false) } return }
-      if (fromBody && body.current!.scrollTop > 0) { active = false; return }
+      if (dy <= 0) return
       e.preventDefault()
       set(dy, false)
     }
@@ -92,7 +87,7 @@ export function SheetFrame({
           {head}
           <Link className="xbtn" href={closeHref} scroll={false} aria-label="ปิด"><IconX /></Link>
         </div>
-        <div ref={body} className="sheet-b">{children}</div>
+        <div className="sheet-b">{children}</div>
         {foot && <div className="sheet-f">{foot}</div>}
       </aside>
     </>
