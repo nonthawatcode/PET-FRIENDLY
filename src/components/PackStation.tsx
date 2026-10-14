@@ -6,7 +6,7 @@ import { PLATFORM } from '@/lib/format'
 import type { Order } from '@/lib/types'
 import { PlatformMark } from './bits'
 import { CameraScanner } from './CameraScanner'
-import { IconCamera, IconCheck, IconScan } from './icons'
+import { IconCamera, IconCheck, IconScan, IconX } from './icons'
 
 type Product = { id: string; sku: string; option_name: string }
 type Msg = { type: 'ok' | 'bad' | 'warn'; text: string; sub?: string; bindCode?: string; id?: number }
@@ -212,6 +212,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
                 <button className="btn" type="button" onClick={bind} disabled={busy}>ผูก</button>
               </div>
             )}
+            <button type="button" className="banner-x" aria-label="ปิดข้อความ" onClick={() => { setMsg(null); setBindOrder(''); focus() }}><IconX size={14} /></button>
           </div>
         )}
 
