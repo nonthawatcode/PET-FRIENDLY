@@ -1,12 +1,16 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { errorText } from '@/lib/format'
+import { dispatchPending, sendTest, vapidPublicKey } from '@/lib/push'
 import type { ActionResult, Order, Platform } from '@/lib/types'
 
 const refresh = () => revalidatePath('/', 'layout')
+// Send any new phone notifications (new order, low stock) after the response is on its way.
+const pushLater = () => after(() => dispatchPending().catch(() => {}))
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim()
 const int = (fd: FormData, k: string) => Number.parseInt(str(fd, k), 10)
 
@@ -69,6 +73,7 @@ export async function confirmPack(orderId: string, scanned: Record<string, numbe
   const r = data as { ok: boolean; error?: string; already?: boolean }
   if (!r.ok) return { ok: false, error: errorText(r.error) }
   refresh()
+  pushLater()
   return { ok: true, message: r.already ? 'ออเดอร์นี้แพ็กไว้แล้ว ไม่ได้ตัดสต็อกซ้ำ' : undefined }
 }
 
@@ -116,6 +121,7 @@ export async function receiveStock(_: ActionResult | null, fd: FormData): Promis
 
 export async function adjustStock(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const r = await rpc('adjust_stock', { p_product: str(fd, 'product_id'), p_delta: int(fd, 'delta'), p_reason: str(fd, 'reason') })
+  pushLater()
   return r.ok ? { ok: true, message: 'บันทึกการแก้ไขแล้ว' } : r
 }
 
@@ -130,6 +136,7 @@ export async function bindListing(_: ActionResult | null, fd: FormData): Promise
   })
   if (error) return { ok: false, error: errorText(error) }
   refresh()
+  pushLater()
   return { ok: true, message: data ? `ผูกแล้ว และจองสต็อกให้ ${data} ออเดอร์ที่รออยู่` : 'ผูกรหัสแล้ว' }
 }
 
@@ -174,6 +181,7 @@ export async function saveDmColors(productId: string, fg: string, bg: string): P
 // ---------------------------------------------------------------- test data
 export async function createSampleOrder(): Promise<ActionResult> {
   const r = await rpc('create_sample_order', {})
+  pushLater()
   return r.ok ? { ok: true, message: 'สร้างออเดอร์ตัวอย่างแล้ว' } : r
 }
 
@@ -239,4 +247,36 @@ export async function resetLogo(): Promise<ActionResult> {
   if (error) return { ok: false, error: errorText(error) }
   refresh()
   return { ok: true }
+}
+
+// ---------------------------------------------------------------- notifications
+export async function getVapidKey(): Promise<string | null> {
+  return vapidPublicKey()
+}
+
+export async function savePushSubscription(sub: { endpoint: string; p256dh: string; auth: string }, userAgent: string): Promise<ActionResult> {
+  const r = await rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: sub.p256dh, p_auth: sub.auth, p_user_agent: userAgent.slice(0, 200) })
+  return r
+}
+
+export async function removePushSubscription(endpoint: string): Promise<ActionResult> {
+  return rpc('remove_push_subscription', { p_endpoint: endpoint })
+}
+
+export async function sendTestPush(): Promise<ActionResult> {
+  const sb = await createClient()
+  const { data } = await sb.auth.getUser()
+  if (!data.user) return { ok: false, error: errorText('not_authenticated') }
+  const r = await sendTest(data.user.id)
+  if (r === 'no_service_key') return { ok: false, error: 'ยังไม่ได้ตั้งค่า SUPABASE_SERVICE_ROLE_KEY บนเซิร์ฟเวอร์' }
+  if (r === 'no_subscription') return { ok: false, error: 'เครื่องนี้ยังไม่ได้เปิดแจ้งเตือน' }
+  return { ok: true, message: 'ส่งแล้ว ดูที่มือถือได้เลย' }
+}
+
+export async function markNotificationsSeen(): Promise<void> {
+  const sb = await createClient()
+  const { data } = await sb.auth.getUser()
+  if (!data.user) return
+  await sb.from('profiles').update({ notifications_seen_at: new Date().toISOString() }).eq('id', data.user.id)
+  refresh()
 }

@@ -69,3 +69,12 @@ export interface Movement {
 }
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string }
+
+export interface Notice {
+  id: number
+  kind: 'new_order' | 'low_stock' | 'handover_overdue' | 'storage_full' | string
+  title: string
+  body: string
+  url: string
+  created_at: string
+}

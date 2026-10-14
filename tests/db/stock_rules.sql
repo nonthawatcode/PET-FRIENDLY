@@ -174,4 +174,19 @@ select pg_temp.check((public.hand_over(array[(select id from orders where extern
 select pg_temp.check((select status = 'shipped' and handover_id is not null from orders where external_order_id='SO-HO'), 'packed order is now shipped with handover');
 select pg_temp.check((select status = 'pending' from orders where external_order_id='TT-1'), 'unpacked order untouched');
 reset role;
+-- 15. Notifications
+select pg_temp.check((select count(*) > 0 from notifications where kind = 'new_order' and dedupe_key = 'order:' || (select id from orders where external_order_id='SO-1')), 'new order creates a notification');
+select pg_temp.check((select count(*) = 1 from notifications where kind = 'new_order' and dedupe_key = 'order:' || (select id from orders where external_order_id='SO-1')), 'resyncing an order does not notify twice');
+-- FDP-03 started at 18 (<= 20) so it never crossed; push FDP-01 down across its threshold.
+select private._move((select id from products where sku='PF-FDP-01'), 'adjust', 100, -100, 0, null, 'test drain', null);
+select pg_temp.check((select count(*) = 1 from notifications where kind = 'low_stock' and title like '%PF-FDP-01%'), 'low stock notifies when crossing the alert level');
+select private._move((select id from products where sku='PF-FDP-01'), 'adjust', 1, -1, 0, null, 'test drain more', null);
+select pg_temp.check((select count(*) = 1 from notifications where kind = 'low_stock' and title like '%PF-FDP-01%'), 'no repeat while already low');
+update orders set packed_at = now() - interval '2 days' where external_order_id = 'SO-UNPAID';
+reset role;
+insert into orders (platform, external_order_id, ordered_at, status, packed_at) values ('shopee', 'SO-LATE', now() - interval '3 days', 'packed', now() - interval '2 days');
+select pg_temp.check((public.run_daily_checks() ->> 'late')::int >= 1, 'daily check counts parcels not handed over');
+select pg_temp.check((select count(*) = 1 from notifications where kind = 'handover_overdue'), 'overdue notification created');
+select public.run_daily_checks();
+select pg_temp.check((select count(*) = 1 from notifications where kind = 'handover_overdue'), 'daily check does not repeat the same day');
 \echo ALL TESTS PASSED

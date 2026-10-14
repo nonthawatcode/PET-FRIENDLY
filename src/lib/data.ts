@@ -1,7 +1,7 @@
 import 'server-only'
 import { createClient } from './supabase/server'
 import { bkkStart } from './format'
-import type { Movement, Order, OrderStatus, Platform, ProductStock } from './types'
+import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock } from './types'
 
 const ORDER_SELECT =
   'id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, handover_id, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))'
@@ -12,17 +12,22 @@ export async function getShell() {
   // avoids another round trip. Every query below is still protected by database rules.
   const { data: { session } } = await sb.auth.getSession()
   const uid = session?.user.id ?? ''
-  const [pending, low, logo, profile] = await Promise.all([
+  const [pending, low, logo, profile, notes] = await Promise.all([
     sb.from('orders').select('id', { count: 'exact', head: true }).in('status', ['pending', 'packing']),
     sb.from('product_stock').select('id', { count: 'exact', head: true }).eq('is_low', true).eq('archived', false),
     sb.from('app_settings').select('value').eq('key', 'logo_url').maybeSingle(),
-    sb.from('profiles').select('id, display_name, email').eq('id', uid).maybeSingle(),
+    sb.from('profiles').select('id, display_name, email, notifications_seen_at').eq('id', uid).maybeSingle(),
+    sb.from('notifications').select('id, kind, title, body, url, created_at').order('created_at', { ascending: false }).limit(30),
   ])
+  const seenAt = (profile.data as { notifications_seen_at?: string } | null)?.notifications_seen_at ?? ''
+  const notifications = (notes.data ?? []) as Notice[]
   return {
     profile: profile.data,
     pendingCount: pending.count ?? 0,
     lowCount: low.count ?? 0,
     logoUrl: (logo.data?.value as string | undefined) ?? null,
+    notifications,
+    unread: notifications.filter((n) => n.created_at > seenAt).length,
   }
 }
 

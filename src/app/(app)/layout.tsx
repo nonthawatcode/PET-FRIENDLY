@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Dock } from '@/components/Dock'
 import { LiveRefresh } from '@/components/LiveRefresh'
 import { UpdateBanner } from '@/components/UpdateBanner'
-import { IconBell, IconSearch } from '@/components/icons'
+import { IconSearch } from '@/components/icons'
+import { NotificationBell } from '@/components/NotificationBell'
 import { getShell } from '@/lib/data'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,9 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="sp" />
           <span className="chip warn" title="ยังไม่ได้เชื่อม API ของ Marketplace">ยังไม่เชื่อม Marketplace</span>
           <Link className="cbtn" href="/orders?focus=1" aria-label="ค้นหาออเดอร์" title="ค้นหาออเดอร์"><IconSearch size={18} /></Link>
-          <Link className="cbtn" href="/stock" aria-label="สินค้าใกล้หมด" title="สินค้าใกล้หมด">
-            <IconBell />{shell.lowCount > 0 && <span className="dot" />}
-          </Link>
+          <NotificationBell items={shell.notifications} unread={shell.unread} />
         </div>
       </header>
       {children}

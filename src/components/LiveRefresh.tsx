@@ -15,6 +15,7 @@ export function LiveRefresh() {
       .channel('backoffice-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, bump)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, bump)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, bump)
       .subscribe()
     return () => { clearTimeout(t); sb.removeChannel(ch) }
   }, [router])

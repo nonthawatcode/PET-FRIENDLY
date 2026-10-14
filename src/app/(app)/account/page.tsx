@@ -1,6 +1,7 @@
 import { createSampleOrder, inviteUser, resetLogo, setUserDisabled, signOut, updateDisplayName, uploadLogo } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { PlatformMark } from '@/components/bits'
+import { PushToggle } from '@/components/PushToggle'
 import { ThemeSwitch } from '@/components/ThemeSwitch'
 import { VersionCheck } from '@/components/VersionCheck'
 import { getShell, getStaff } from '@/lib/data'
@@ -38,6 +39,11 @@ export default async function AccountPage() {
         <div className="field"><label htmlFor="dn">ชื่อที่แสดงในประวัติ</label><input id="dn" name="display_name" className="input" defaultValue={me?.display_name ?? ''} required /></div>
         <Submit className="btn">บันทึกชื่อ</Submit>
       </ActionForm>
+
+      <div className="sect" id="notify">
+        <span className="cap">แจ้งเตือน</span>
+        <PushToggle />
+      </div>
 
       <div className="sect">
         <span className="cap">Marketplace</span>
