@@ -12,14 +12,20 @@ const ITEMS = [
   { href: '/account', label: 'บัญชี', icon: null },
 ] as const
 
+const indexOf = (path: string) => ITEMS.findIndex((i) => (i.href === '/' ? path === '/' : path.startsWith(i.href)))
+
 export function Dock({ pending, low, initials }: { pending: number; low: number; initials: string }) {
   const path = usePathname()
-  const active = ITEMS.findIndex((i) => (i.href === '/' ? path === '/' : path.startsWith(i.href)))
+  const routeIndex = indexOf(path)
+  // Move the highlight the moment a tab is tapped, not when the next page finishes loading.
+  const [tapped, setTapped] = useState<number | null>(null)
+  const active = tapped ?? routeIndex
   const dock = useRef<HTMLElement>(null)
   const ind = useRef<HTMLSpanElement>(null)
   const [ready, setReady] = useState(false)
   const [pop, setPop] = useState(-1)
-  const prev = useRef(active)
+
+  useEffect(() => { setTapped(null) }, [path])
 
   const place = () => {
     const btn = dock.current?.querySelectorAll<HTMLAnchorElement>('a')[active]
@@ -35,9 +41,6 @@ export function Dock({ pending, low, initials }: { pending: number; low: number;
     window.addEventListener('resize', onResize)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', onResize) }
   })
-  useEffect(() => {
-    if (prev.current !== active) { setPop(active); prev.current = active }
-  }, [active])
 
   const badge = [0, pending, low, 0]
   return (
@@ -45,7 +48,11 @@ export function Dock({ pending, low, initials }: { pending: number; low: number;
       <span ref={ind} className="ind" aria-hidden="true" />
       {ITEMS.map((it, i) => (
         <Link key={it.href} href={it.href} aria-current={i === active ? 'page' : undefined} aria-label={it.label}
-          className={pop === i ? 'pop' : undefined} onAnimationEnd={() => setPop(-1)}>
+          className={pop === i ? 'pop' : undefined} onAnimationEnd={() => setPop(-1)}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+            if (i !== active) { setTapped(i); setPop(i) }
+          }}>
           {it.icon ?? <span className="av">{initials}</span>}
           {badge[i] > 0 && <span key={badge[i]} className="bdg bump">{badge[i]}</span>}
           <span className="lbl">{it.label}</span>

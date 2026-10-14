@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Dock } from '@/components/Dock'
 import { LiveRefresh } from '@/components/LiveRefresh'
+import { UpdateBanner } from '@/components/UpdateBanner'
 import { IconBell, IconSearch } from '@/components/icons'
 import { getShell } from '@/lib/data'
 
@@ -30,6 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {children}
       <Dock pending={shell.pendingCount} low={shell.lowCount} initials={initials(name)} />
       <LiveRefresh />
+      <UpdateBanner />
     </>
   )
 }
