@@ -217,15 +217,16 @@ details.demo button{font-family:var(--mono);font-size:.74rem;border:1px dashed v
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(5,10,15,.38);z-index:40}
 .sheet{position:fixed;z-index:41;left:0;right:0;bottom:0;max-height:90vh;background:var(--bg);border-radius:26px 26px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.2);padding-bottom:env(safe-area-inset-bottom,0px)}
-.grab{width:40px;height:5px;border-radius:999px;background:var(--sep2);margin:8px auto 0}
-.sheet-h{padding:10px 18px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.grab-zone{padding:10px 0 4px;touch-action:none;cursor:grab}
+.grab{width:44px;height:5px;border-radius:999px;background:var(--sep2);margin:0 auto}
+.sheet-h{touch-action:none;padding:10px 18px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .sheet-b{padding:4px 16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;flex:1;min-height:0}
 .sheet-b>*{flex:none}
 .sheet-f{padding:12px 16px 16px;display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--sep);background:var(--card)}
 .xbtn{width:34px;height:34px;border-radius:999px;border:0;background:var(--fill);display:grid;place-items:center;cursor:pointer;flex:none;color:var(--muted)}
 @media (min-width:900px){
   .sheet{left:auto;right:16px;top:16px;bottom:16px;width:460px;max-height:none;border-radius:26px}
-  .grab{display:none}
+  .grab-zone{display:none}
 }
 .kvg .rowi{min-height:50px}
 .kvg .k{color:var(--muted);flex:none;width:104px;font-size:.9rem}
@@ -354,3 +355,5 @@ body{margin:0;position:relative}
 .photo button{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;cursor:pointer}
 .photo.add{display:grid;place-items:center;align-content:center;gap:4px;color:var(--muted);font-weight:600;font-size:.82rem;border:2px dashed var(--sep2);background:var(--card);cursor:pointer}
 .hcheck{width:22px;height:22px;accent-color:var(--fg);flex:none}
+
+.sheet-b{overscroll-behavior:contain}

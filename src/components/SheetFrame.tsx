@@ -2,13 +2,19 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { IconX } from './icons'
+
+const CLOSE_AT = 110 // px dragged down before the sheet closes on release
 
 export function SheetFrame({
   closeHref, head, children, foot,
 }: { closeHref: string; head: React.ReactNode; children: React.ReactNode; foot?: React.ReactNode }) {
   const router = useRouter()
+  const sheet = useRef<HTMLElement>(null)
+  const scrim = useRef<HTMLAnchorElement>(null)
+  const body = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     // Esc also means "stop loading" to the browser, which can cancel the navigation we start,
     // so block that and navigate right after the key event.
@@ -20,16 +26,73 @@ export function SheetFrame({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [closeHref, router])
+
+  // Swipe down to close (phones): from the handle/header, or from the content when it is
+  // scrolled to the top.
+  useEffect(() => {
+    const el = sheet.current
+    if (!el) return
+    let startY = 0, startT = 0, dy = 0, active = false, fromBody = false
+
+    const set = (y: number, anim: boolean) => {
+      el.style.transition = anim ? 'transform .25s cubic-bezier(.2,.8,.2,1)' : 'none'
+      el.style.transform = y ? `translateY(${y}px)` : ''
+      if (scrim.current) {
+        scrim.current.style.transition = anim ? 'opacity .25s' : 'none'
+        scrim.current.style.opacity = String(Math.max(0, 1 - y / (el.offsetHeight || 1)))
+      }
+    }
+    const isDesktop = () => window.matchMedia('(min-width: 900px)').matches
+
+    const onStart = (e: TouchEvent) => {
+      if (isDesktop() || e.touches.length !== 1) return
+      const t = e.target as HTMLElement
+      fromBody = !!body.current?.contains(t)
+      if (fromBody && body.current!.scrollTop > 0) return
+      if (t.closest('input,select,textarea')) return
+      startY = e.touches[0].clientY; startT = Date.now(); dy = 0; active = true
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!active) return
+      dy = e.touches[0].clientY - startY
+      if (dy <= 0) { if (fromBody) { active = false; set(0, false) } return }
+      if (fromBody && body.current!.scrollTop > 0) { active = false; return }
+      e.preventDefault()
+      set(dy, false)
+    }
+    const onEnd = () => {
+      if (!active) return
+      active = false
+      const fast = dy > 40 && dy / Math.max(1, Date.now() - startT) > 0.6
+      if (dy > CLOSE_AT || fast) {
+        set(el.offsetHeight, true)
+        setTimeout(() => router.push(closeHref, { scroll: false }), 180)
+      } else {
+        set(0, true)
+      }
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+    }
+  }, [closeHref, router])
+
   return (
     <>
-      <Link className="scrim" href={closeHref} scroll={false} aria-label="ปิด" />
-      <aside className="sheet" role="dialog" aria-modal="true">
-        <div className="grab" />
+      <Link ref={scrim} className="scrim" href={closeHref} scroll={false} aria-label="ปิด" />
+      <aside ref={sheet} className="sheet" role="dialog" aria-modal="true">
+        <div className="grab-zone"><div className="grab" /></div>
         <div className="sheet-h">
           {head}
           <Link className="xbtn" href={closeHref} scroll={false} aria-label="ปิด"><IconX /></Link>
         </div>
-        <div className="sheet-b">{children}</div>
+        <div ref={body} className="sheet-b">{children}</div>
         {foot && <div className="sheet-f">{foot}</div>}
       </aside>
     </>
