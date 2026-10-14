@@ -2,6 +2,7 @@ import { createSampleOrder, inviteUser, resetLogo, setUserDisabled, signOut, upd
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { PlatformMark } from '@/components/bits'
 import { ThemeSwitch } from '@/components/ThemeSwitch'
+import { VersionCheck } from '@/components/VersionCheck'
 import { getShell, getStaff } from '@/lib/data'
 import { PLATFORM } from '@/lib/format'
 import type { ActionResult, Platform } from '@/lib/types'
@@ -104,6 +105,11 @@ export default async function AccountPage() {
       <div className="sect">
         <span className="cap">การแสดงผล</span>
         <ThemeSwitch />
+      </div>
+
+      <div className="sect">
+        <span className="cap">แอป</span>
+        <VersionCheck />
       </div>
     </>
   )
