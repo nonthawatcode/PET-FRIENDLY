@@ -65,11 +65,16 @@ export function Dock({ pending, low, initials }: { pending: number; low: number;
     }
     const vv = window.visualViewport
     const onVv = () => { if (!isField(document.activeElement)) resync() }
+    // Also re-place it each time scrolling stops, in case Safari drifted it while scrolling.
+    let scrollTimer = 0
+    const onScroll = () => { clearTimeout(scrollTimer); scrollTimer = window.setTimeout(onVv, 200) }
+    window.addEventListener('scroll', onScroll, { passive: true })
     document.addEventListener('focusin', onIn)
     document.addEventListener('focusout', onOut)
     vv?.addEventListener('resize', onVv)
     return () => {
-      clearTimeout(timer)
+      clearTimeout(timer); clearTimeout(scrollTimer)
+      window.removeEventListener('scroll', onScroll)
       document.removeEventListener('focusin', onIn)
       document.removeEventListener('focusout', onOut)
       vv?.removeEventListener('resize', onVv)
