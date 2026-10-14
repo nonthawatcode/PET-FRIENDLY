@@ -53,12 +53,13 @@ export async function startPack(code: string): Promise<StartPackResult> {
     .select('id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))')
     .eq('id', r.order_id!)
     .single()
-  refresh()
   return { ok: true, order: order as unknown as Order }
 }
 
 export async function parkPack(orderId: string): Promise<ActionResult> {
-  return rpc('park_pack', { p_order: orderId })
+  const sb = await createClient()
+  const { error } = await sb.rpc('park_pack', { p_order: orderId })
+  return error ? { ok: false, error: errorText(error) } : { ok: true }
 }
 
 export async function confirmPack(orderId: string, scanned: Record<string, number>): Promise<ActionResult> {

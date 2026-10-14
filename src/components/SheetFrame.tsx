@@ -10,7 +10,13 @@ export function SheetFrame({
 }: { closeHref: string; head: React.ReactNode; children: React.ReactNode; foot?: React.ReactNode }) {
   const router = useRouter()
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') router.push(closeHref, { scroll: false }) }
+    // Esc also means "stop loading" to the browser, which can cancel the navigation we start,
+    // so block that and navigate right after the key event.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setTimeout(() => router.push(closeHref, { scroll: false }), 0)
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [closeHref, router])

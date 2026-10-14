@@ -8,18 +8,18 @@ const ORDER_SELECT =
 
 export async function getShell() {
   const sb = await createClient()
-  const [{ data: auth }, pending, low, logo] = await Promise.all([
-    sb.auth.getUser(),
+  // The middleware already verified the login; reading the id from the session cookie
+  // avoids another round trip. Every query below is still protected by database rules.
+  const { data: { session } } = await sb.auth.getSession()
+  const uid = session?.user.id ?? ''
+  const [pending, low, logo, profile] = await Promise.all([
     sb.from('orders').select('id', { count: 'exact', head: true }).in('status', ['pending', 'packing']),
     sb.from('product_stock').select('id', { count: 'exact', head: true }).eq('is_low', true).eq('archived', false),
     sb.from('app_settings').select('value').eq('key', 'logo_url').maybeSingle(),
+    sb.from('profiles').select('id, display_name, email').eq('id', uid).maybeSingle(),
   ])
-  const user = auth.user
-  const { data: profile } = user
-    ? await sb.from('profiles').select('id, display_name, email').eq('id', user.id).maybeSingle()
-    : { data: null }
   return {
-    profile,
+    profile: profile.data,
     pendingCount: pending.count ?? 0,
     lowCount: low.count ?? 0,
     logoUrl: (logo.data?.value as string | undefined) ?? null,
