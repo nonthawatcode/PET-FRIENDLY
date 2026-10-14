@@ -45,6 +45,8 @@ export function Dock({ pending, low, initials }: { pending: number; low: number;
   // iPhone: hide the dock while the keyboard is up (it covers the fields), and after the keyboard
   // closes make Safari re-place the dock, which it sometimes leaves floating mid-screen.
   useEffect(() => {
+    // Computers have no on-screen keyboard (and the pack page keeps the scan box focused there).
+    if (!window.matchMedia('(pointer: coarse)').matches) return
     const isField = (t: EventTarget | null) =>
       t instanceof HTMLElement && (t.matches('textarea,select,[contenteditable="true"]') ||
         (t instanceof HTMLInputElement && !['checkbox', 'radio', 'file', 'button', 'submit', 'range', 'color'].includes(t.type)))
