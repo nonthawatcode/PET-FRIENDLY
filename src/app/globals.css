@@ -330,3 +330,8 @@ body{margin:0;position:relative}
 .banner{position:relative;padding-right:48px}
 .banner-x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:999px;border:0;background:rgba(0,0,0,.08);color:inherit;display:grid;place-items:center;cursor:pointer}
 .banner-x:hover{background:rgba(0,0,0,.14)}
+
+/* confirm step summary */
+.summary{display:grid;gap:12px}
+.sum-ok{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ok);background:var(--ok-soft);padding:10px 14px;border-radius:14px}
+.station .group{box-shadow:none;border:1px solid var(--sep)}

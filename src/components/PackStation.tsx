@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { bindLabelCode, confirmPack, parkPack, startPack } from '@/app/actions'
-import { PLATFORM } from '@/lib/format'
+import { PLATFORM, baht } from '@/lib/format'
 import type { Order } from '@/lib/types'
 import { PlatformMark } from './bits'
 import { CameraScanner } from './CameraScanner'
@@ -96,6 +96,17 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
     return () => document.removeEventListener('click', onClick)
   }, [])
 
+  const confirmBtn = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (phase === 3) {
+      setCamOpen(false)
+      if (!isTouch()) confirmBtn.current?.focus({ preventScroll: true })
+      // Bring the confirm button above the floating menu on phones.
+      setTimeout(() => confirmBtn.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
   const say = (m: Msg | null) => { setMsg(m && { ...m, id: Date.now() }); if (m) beep(m.type === 'ok') }
 
   async function openLabel(code: string) {
@@ -158,7 +169,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
     else void openLabel(code)
   }
 
-  const sub = phase === 2 ? `${got}/${total} ชิ้น` : phase === 3 ? 'กด Enter' : ''
+  const sub = phase === 2 ? `${got}/${total} ชิ้น` : phase === 3 ? 'ตรวจแล้วกดยืนยัน' : ''
   return (
     <div className="sect">
       <section className="station" aria-label="สถานีแพ็ก">
@@ -180,7 +191,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
           })}
         </ol>
 
-        {order && (
+        {order && phase === 2 && (
           <div className="ordhead">
             <PlatformMark p={order.platform} />
             <div className="main">
@@ -191,16 +202,16 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
           </div>
         )}
 
-        <div className="scanbox">
+        {phase !== 3 && <div className="scanbox">
           <IconScan />
           <button type="button" className="cambtn" onClick={() => { input.current?.blur(); setCamCode(null); setMsg(null); setCamOpen(true) }} aria-label="สแกนด้วยกล้องมือถือ" title="สแกนด้วยกล้องมือถือ">
             <IconCamera /><span>กล้อง</span>
           </button>
           <input ref={input} className="scaninput" autoComplete="off" spellCheck={false} aria-label="ช่องสแกน" disabled={busy}
-            placeholder={phase === 1 ? 'สแกนบาร์โค้ดใบปะหน้า…' : phase === 2 ? 'สแกน Data Matrix สินค้าทีละชิ้น…' : phase === 3 ? 'กด Enter เพื่อยืนยันแพ็ก' : 'สแกนใบปะหน้าถัดไป…'}
+            placeholder={phase === 1 ? 'สแกนบาร์โค้ดใบปะหน้า…' : phase === 2 ? 'สแกน Data Matrix สินค้าทีละชิ้น…' : 'สแกนใบปะหน้าถัดไป…'}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const v = e.currentTarget.value; e.currentTarget.value = ''; handle(v) } }}
             onBlur={() => { if (!busy) setTimeout(() => { if (!document.activeElement || document.activeElement === document.body) focus() }, 50) }} />
-        </div>
+        </div>}
 
         {msg && (
           <div className={`banner ${msg.type}`} role="alert" key={msg.id}>
@@ -216,7 +227,35 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
           </div>
         )}
 
-        {order ? (
+        {order && phase === 3 ? (
+          <div className="summary">
+            <div className="sum-ok"><IconCheck /> ตรวจสินค้าครบแล้ว ตรวจข้อมูลแล้วกดยืนยัน</div>
+            <div className="group kvg">
+              <div className="rowi noicon"><span className="k">ผู้รับ</span><span className="v"><b>{order.recipient_name ?? order.buyer_name ?? '—'}</b></span></div>
+              <div className="rowi noicon"><span className="k">ช่องทาง</span><span className="v"><span className="row" style={{ justifyContent: 'flex-end', gap: 8 }}><PlatformMark p={order.platform} />{PLATFORM[order.platform]}</span></span></div>
+              <div className="rowi noicon"><span className="k">เลขออเดอร์</span><span className="v mono">{order.external_order_id}</span></div>
+              <div className="rowi noicon"><span className="k">เลขพัสดุ</span><span className="v mono">{order.tracking_number ?? '—'}</span></div>
+              {order.total_amount != null && <div className="rowi noicon"><span className="k">ยอด</span><span className="v">{baht(order.total_amount)}</span></div>}
+            </div>
+            <div className="group">
+              {lines.map((l) => (
+                <div className="rowi" key={l.productId}>
+                  <span className="ic" style={{ background: 'var(--ok-soft)', color: 'var(--ok)' }}><IconCheck /></span>
+                  <div className="main"><div className="t1">{l.name}</div><div className="t2 mono">{l.sku}</div></div>
+                  <b className="num">×{l.need}</b>
+                </div>
+              ))}
+              <div className="rowi noicon"><div className="main"><b>รวม</b></div><b className="num">{total} ชิ้น</b></div>
+            </div>
+            <button ref={confirmBtn} className="btn ink xl" type="button" onClick={confirm} disabled={busy}>
+              {busy ? 'กำลังบันทึก…' : <><IconCheck /> ยืนยันแพ็ก · ตัดสต็อก</>}
+            </button>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <button className="link quiet" type="button" onClick={() => { setScanned({}); setMsg(null) }}>สแกนสินค้าใหม่</button>
+              <button className="link quiet" type="button" onClick={park}>ยกเลิกออเดอร์นี้</button>
+            </div>
+          </div>
+        ) : order ? (
           <>
             <div>
               <div className="barrow"><span>{complete ? 'ครบทุกชิ้นแล้ว' : `สแกนแล้ว ${got} จาก ${total} ชิ้น`}</span><span className="num">{pct}%</span></div>
