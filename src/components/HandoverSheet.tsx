@@ -28,13 +28,14 @@ export function HandoverSheet({ orders, preselect, onDoneHref }: { orders: Order
   const [other, setOther] = useState('')
   const [picked, setPicked] = useState<Set<string>>(new Set(preselect ? [preselect] : []))
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [noPhoto, setNoPhoto] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const name = courier === 'อื่น ๆ' ? other.trim() : courier
-  const ready = !!name && picked.size > 0 && photos.length > 0 && !busy
+  const ready = !!name && picked.size > 0 && (photos.length > 0 || noPhoto) && !busy
   const allOn = orders.length > 0 && orders.every((o) => picked.has(o.id))
 
   const toggle = (id: string) => setPicked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
@@ -54,7 +55,7 @@ export function HandoverSheet({ orders, preselect, onDoneHref }: { orders: Order
       const sb = createClient()
       const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date())
       const paths: string[] = []
-      for (const p of photos) {
+      for (const p of noPhoto ? [] : photos) {
         const path = `${day}/${crypto.randomUUID()}.jpg`
         const { error } = await sb.storage.from('handover').upload(path, p.file, { contentType: 'image/jpeg' })
         if (error) throw new Error('อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง')
@@ -113,8 +114,8 @@ export function HandoverSheet({ orders, preselect, onDoneHref }: { orders: Order
       </div>
 
       <div className="sect">
-        <span className="cap">3. ถ่ายรูปพัสดุ (อย่างน้อย 1 รูป)</span>
-        <div className="photos">
+        <span className="cap">3. ถ่ายรูปพัสดุ</span>
+        {!noPhoto && <div className="photos">
           {photos.map((p, i) => (
             <div className="photo" key={p.url}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -127,13 +128,16 @@ export function HandoverSheet({ orders, preselect, onDoneHref }: { orders: Order
               <IconCamera size={22} /><span>ถ่ายรูป</span>
             </button>
           )}
-        </div>
+        </div>}
+        <button type="button" className="fchip" aria-pressed={noPhoto} onClick={() => setNoPhoto((v) => !v)} style={{ justifySelf: 'start' }}>
+          {noPhoto ? <><IconCheck size={14} /> ไม่มีรูป</> : 'ไม่มีรูป'}
+        </button>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" multiple hidden onChange={(e) => { void addPhotos(e.target.files); e.target.value = '' }} />
       </div>
 
       {err && <p className="ferr" role="alert">{err}</p>}
       <button type="button" className="btn ink xl" disabled={!ready} onClick={submit}>
-        {busy ? 'กำลังบันทึก…' : !name ? 'เลือกขนส่งก่อน' : !picked.size ? 'เลือกกล่องที่จะส่ง' : !photos.length ? 'ถ่ายรูปพัสดุก่อน' : <><IconCheck /> ยืนยันส่งให้ {name} · {picked.size} กล่อง</>}
+        {busy ? 'กำลังบันทึก…' : !name ? 'เลือกขนส่งก่อน' : !picked.size ? 'เลือกกล่องที่จะส่ง' : !photos.length && !noPhoto ? 'ถ่ายรูปพัสดุ หรือกด “ไม่มีรูป”' : <><IconCheck /> ยืนยันส่งให้ {name} · {picked.size} กล่อง</>}
       </button>
       <p className="xs muted" style={{ margin: 0, textAlign: 'center' }}>ระบบบันทึกเวลาและชื่อผู้ส่งให้อัตโนมัติ</p>
     </>

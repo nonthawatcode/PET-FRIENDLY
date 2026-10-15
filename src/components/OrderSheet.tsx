@@ -6,6 +6,7 @@ import { PlatformMark, Status } from './bits'
 import { IconPack } from './icons'
 import { SheetFrame } from './SheetFrame'
 import Link from 'next/link'
+import { CopyButton } from './CopyButton'
 
 export async function OrderSheet({ id, closeHref }: { id: string; closeHref: string }) {
   const data = await getOrder(id)
@@ -25,7 +26,7 @@ export async function OrderSheet({ id, closeHref }: { id: string; closeHref: str
       head={
         <div className="row" style={{ gap: 12, flexWrap: 'nowrap' }}>
           <PlatformMark p={o.platform} />
-          <div><div className="xs muted">{PLATFORM[o.platform]}{o.source === 'sample' && ' · ออเดอร์ตัวอย่าง'}</div><h2 className="mono" style={{ fontSize: '1.05rem' }}>{o.external_order_id}</h2></div>
+          <div><div className="xs muted">{PLATFORM[o.platform]}{o.source === 'sample' && ' · ออเดอร์ตัวอย่าง'}</div><h2 className="mono" style={{ fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>{o.external_order_id}<CopyButton text={o.external_order_id} /></h2></div>
         </div>
       }
       foot={
@@ -61,6 +62,7 @@ export async function OrderSheet({ id, closeHref }: { id: string; closeHref: str
             <div className="rowi noicon"><span className="k">ขนส่ง</span><span className="v"><b>{ho.courier}</b></span></div>
             <div className="rowi noicon"><span className="k">ส่งเมื่อ</span><span className="v">{when(ho.created_at)}{ho.profiles?.display_name && ` · ${ho.profiles.display_name}`}</span></div>
           </div>
+          {!ho.photo_paths.length && <p className="small muted" style={{ margin: '0 6px' }}>ส่งแบบไม่มีรูป</p>}
           <div className="photos">
             {ho.photos.map((u, i) => (
               <a key={u} className="photo" href={u} target="_blank" rel="noreferrer">

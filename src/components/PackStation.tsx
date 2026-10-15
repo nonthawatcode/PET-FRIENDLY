@@ -9,6 +9,7 @@ import { PlatformMark } from './bits'
 import { CameraScanner } from './CameraScanner'
 import { IconCamera, IconCheck, IconScan, IconX } from './icons'
 import { englishKey, fixThaiKeyboard } from '@/lib/keyboard'
+import { CopyButton } from './CopyButton'
 
 type Product = { id: string; sku: string; option_name: string }
 type Msg = { type: 'ok' | 'bad' | 'warn'; text: string; sub?: string; bindCode?: string; id?: number }
@@ -228,7 +229,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
           <div className="ordhead">
             <PlatformMark p={order.platform} />
             <div className="main">
-              <div className="id">{order.external_order_id}</div>
+              <div className="id" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{order.external_order_id}<CopyButton text={order.external_order_id} /></div>
               <div className="xs muted">{order.recipient_name ?? order.buyer_name ?? '—'} · พัสดุ <span className="mono">{order.tracking_number ?? '—'}</span></div>
             </div>
             <button className="link quiet" type="button" onClick={park}>ยกเลิก</button>
@@ -272,7 +273,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
             <div className="group kvg">
               <div className="rowi noicon"><span className="k">ผู้รับ</span><span className="v"><b>{order.recipient_name ?? order.buyer_name ?? '—'}</b></span></div>
               <div className="rowi noicon"><span className="k">ช่องทาง</span><span className="v"><span className="row" style={{ justifyContent: 'flex-end', gap: 8 }}><PlatformMark p={order.platform} />{PLATFORM[order.platform]}</span></span></div>
-              <div className="rowi noicon"><span className="k">เลขออเดอร์</span><span className="v mono">{order.external_order_id}</span></div>
+              <div className="rowi noicon"><span className="k">เลขออเดอร์</span><span className="v mono">{order.external_order_id} <CopyButton text={order.external_order_id} /></span></div>
               <div className="rowi noicon"><span className="k">เลขพัสดุ</span><span className="v mono">{order.tracking_number ?? '—'}</span></div>
               {order.total_amount != null && <div className="rowi noicon"><span className="k">ยอด</span><span className="v">{baht(order.total_amount)}</span></div>}
             </div>
@@ -320,7 +321,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
           <div className="donebox">
             <span className="ok"><IconCheck /></span>
             <h3>แพ็กเสร็จ พร้อมส่ง</h3>
-            <div className="mono small">{done.external_order_id}</div>
+            <div className="mono small">{done.external_order_id} <CopyButton text={done.external_order_id} /></div>
             <div className="xs muted">{total || done.order_items.reduce((a, i) => a + i.quantity, 0)} ชิ้น · ตัดสต็อกแล้ว · {PLATFORM[done.platform]} {done.tracking_number}</div>
             <Link className="link" href="/?handover=1" scroll={false}>ส่งขนส่ง →</Link>
           </div>

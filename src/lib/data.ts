@@ -71,6 +71,7 @@ export async function getHandover(id: string) {
   const { data } = await sb.from('handovers').select('id, courier, photo_paths, note, created_at, profiles(display_name)').eq('id', id).maybeSingle()
   if (!data) return null
   const h = data as unknown as { id: string; courier: string; photo_paths: string[]; note: string | null; created_at: string; profiles: { display_name: string } | null }
+  if (!h.photo_paths.length) return { ...h, photos: [] as string[] }
   const { data: signed } = await sb.storage.from('handover').createSignedUrls(h.photo_paths, 60 * 60)
   return { ...h, photos: (signed ?? []).map((x) => x.signedUrl).filter(Boolean) as string[] }
 }

@@ -311,6 +311,15 @@ export async function sendTestPush(): Promise<ActionResult> {
   return { ok: true, message: 'ส่งแล้ว ดูที่มือถือได้เลย' }
 }
 
+/** "ล้างแจ้งเตือน": deletes all past notifications (for everyone). */
+export async function clearNotifications(): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('notifications').delete().gt('id', 0)
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true }
+}
+
 export async function markNotificationsSeen(): Promise<void> {
   const sb = await createClient()
   const { data } = await sb.auth.getUser()

@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
-import { markNotificationsSeen } from '@/app/actions'
+import { useEffect, useRef, useState, useTransition } from 'react'
+import { clearNotifications, markNotificationsSeen } from '@/app/actions'
 import { when } from '@/lib/format'
 import type { Notice } from '@/lib/types'
 import { IconBell, IconOrders, IconPack, IconStock, IconLock, IconX } from './icons'
@@ -13,6 +13,8 @@ export function NotificationBell({ items, unread }: { items: Notice[]; unread: n
   const [open, setOpen] = useState(false)
   const [seenNow, setSeenNow] = useState(false)
   const box = useRef<HTMLDivElement>(null)
+  const [clearing, startClear] = useTransition()
+  const [err, setErr] = useState('')
   const count = seenNow ? 0 : unread
 
   useEffect(() => { setSeenNow(false) }, [unread])
@@ -37,7 +39,15 @@ export function NotificationBell({ items, unread }: { items: Notice[]; unread: n
       </button>
       {open && (
         <div className="notepanel" role="dialog" aria-label="การแจ้งเตือน">
-          <div className="np-h"><b>การแจ้งเตือน</b><button type="button" className="xbtn" onClick={() => setOpen(false)} aria-label="ปิด"><IconX /></button></div>
+          <div className="np-h"><b>การแจ้งเตือน</b>
+            {items.length > 0 && (
+              <button type="button" className="link quiet" disabled={clearing} style={{ marginLeft: 'auto' }}
+                onClick={() => startClear(async () => { const r = await clearNotifications(); setErr(r.ok ? '' : r.error) })}>
+                {clearing ? 'กำลังล้าง…' : 'ล้างแจ้งเตือน'}
+              </button>
+            )}
+            <button type="button" className="xbtn" onClick={() => setOpen(false)} aria-label="ปิด"><IconX /></button></div>
+          {err && <p className="ferr" role="alert" style={{ margin: '0 14px' }}>{err}</p>}
           <div className="np-b">
             {items.length ? items.map((n) => (
               <Link key={n.id} href={n.url} className={`np-item ${!seenNow && items.indexOf(n) < unread ? 'new' : ''}`} onClick={() => setOpen(false)} scroll={false}>
