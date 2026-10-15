@@ -1,7 +1,7 @@
 import 'server-only'
 import { createClient } from './supabase/server'
 import { bkkStart } from './format'
-import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock } from './types'
+import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock, Category } from './types'
 
 const ORDER_SELECT =
   'id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, handover_id, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))'
@@ -38,6 +38,13 @@ export async function getProducts(includeArchived = false) {
   const { data, error } = await q
   if (error) throw error
   return (data ?? []) as ProductStock[]
+}
+
+export async function getCategories() {
+  const sb = await createClient()
+  const { data, error } = await sb.from('categories').select('id, name').order('created_at')
+  if (error) throw error
+  return (data ?? []) as Category[]
 }
 
 export async function getQueue() {

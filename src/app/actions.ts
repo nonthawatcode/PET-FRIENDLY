@@ -148,7 +148,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
   const sb = await createClient()
   const { error } = await sb
     .from('products')
-    .update({ name: str(fd, 'name'), option_name: str(fd, 'option_name'), low_stock_threshold: Math.max(0, int(fd, 'threshold') || 0) })
+    .update({ name: str(fd, 'name'), option_name: str(fd, 'option_name'), low_stock_threshold: Math.max(0, int(fd, 'threshold') || 0), category_id: str(fd, 'category_id') || null })
     .eq('id', str(fd, 'product_id'))
   if (error) return { ok: false, error: errorText(error) }
   refresh()
@@ -168,6 +168,35 @@ export async function createProduct(_: ActionResult | null, fd: FormData): Promi
   if (error) return { ok: false, error: error.code === '23505' ? 'มี SKU นี้อยู่แล้ว' : errorText(error) }
   refresh()
   redirect(`/stock?sku=${encodeURIComponent(sku)}&tab=dm`)
+}
+
+export async function createCategory(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const name = str(fd, 'name')
+  if (!name) return { ok: false, error: 'ใส่ชื่อหมวดก่อน' }
+  const sb = await createClient()
+  const { error } = await sb.from('categories').insert({ name })
+  if (error) return { ok: false, error: error.code === '23505' ? 'มีหมวดชื่อนี้อยู่แล้ว' : errorText(error) }
+  refresh()
+  return { ok: true, message: 'เพิ่มหมวดแล้ว' }
+}
+
+export async function renameCategory(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const name = str(fd, 'name')
+  if (!name) return { ok: false, error: 'ใส่ชื่อหมวดก่อน' }
+  const sb = await createClient()
+  const { error } = await sb.from('categories').update({ name }).eq('id', str(fd, 'category_id'))
+  if (error) return { ok: false, error: error.code === '23505' ? 'มีหมวดชื่อนี้อยู่แล้ว' : errorText(error) }
+  refresh()
+  return { ok: true, message: 'บันทึกแล้ว' }
+}
+
+/** The photo is uploaded from the browser first (bucket "brand"); this stores its address. */
+export async function setProductImage(productId: string, url: string): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('products').update({ image_url: url }).eq('id', productId)
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: 'บันทึกรูปแล้ว' }
 }
 
 export async function saveDmColors(productId: string, fg: string, bg: string): Promise<ActionResult> {

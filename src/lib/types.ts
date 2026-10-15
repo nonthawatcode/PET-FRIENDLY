@@ -12,6 +12,7 @@ export interface ProductStock {
   dm_fg: string
   dm_bg: string
   image_url: string | null
+  category_id: string | null
   archived: boolean
   on_hand: number
   reserved: number
@@ -77,4 +78,9 @@ export interface Notice {
   body: string
   url: string
   created_at: string
+}
+
+export interface Category {
+  id: string
+  name: string
 }

@@ -1,23 +1,26 @@
 import Link from 'next/link'
-import { bindListing, createProduct, receiveStock } from '@/app/actions'
+import { bindListing, createCategory, createProduct, receiveStock, renameCategory } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { PlatformMark } from '@/components/bits'
 import { DataMatrixMini } from '@/components/DataMatrix'
-import { IconIn } from '@/components/icons'
+import { IconCamera, IconIn } from '@/components/icons'
 import { MoveRow } from '@/components/MoveRow'
 import { OrderSheet } from '@/components/OrderSheet'
 import { ProductSheet } from '@/components/ProductSheet'
 import { SheetFrame } from '@/components/SheetFrame'
-import { getMovements, getProducts, getUnmappedSkus } from '@/lib/data'
+import { getCategories, getMovements, getProducts, getUnmappedSkus } from '@/lib/data'
 import { PLATFORM } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-type SP = { sku?: string; tab?: string; new?: string; moves?: string; order?: string; receive?: string }
+type SP = { sku?: string; tab?: string; new?: string; moves?: string; order?: string; receive?: string; cat?: string; cats?: string }
 
 export default async function StockPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
-  const [products, recent, unmapped] = await Promise.all([getProducts(), getMovements({ limit: 8, hideReservations: true }), getUnmappedSkus()])
+  const [products, recent, unmapped, categories] = await Promise.all([getProducts(), getMovements({ limit: 8, hideReservations: true }), getUnmappedSkus(), getCategories()])
+  const cat = categories.some((c) => c.id === sp.cat) ? sp.cat : undefined
+  const shown = cat ? products.filter((p) => p.category_id === cat) : products
+  const back = cat ? `/stock?cat=${cat}` : '/stock'
   const all = sp.moves ? await getMovements({ limit: 300 }) : []
   const max = Math.max(140, ...products.map((p) => p.on_hand))
   const open = sp.sku ? products.find((p) => p.sku === sp.sku) : undefined
@@ -49,12 +52,26 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
+      <div className="chips" role="toolbar" aria-label="หมวดหมู่">
+        <Link className="fchip" href="/stock" scroll={false} aria-pressed={!cat}>ทั้งหมด <span className="c">{products.length}</span></Link>
+        {categories.map((c) => (
+          <Link key={c.id} className="fchip" href={`/stock?cat=${c.id}`} scroll={false} aria-pressed={cat === c.id}>
+            {c.name} <span className="c">{products.filter((p) => p.category_id === c.id).length}</span>
+          </Link>
+        ))}
+        <Link className="fchip" href={`${back}${cat ? '&' : '?'}cats=1`} scroll={false}>+ หมวด</Link>
+      </div>
+
       <div className="pgrid">
-        {products.map((p) => {
+        {shown.map((p) => {
           return (
-            <Link key={p.id} className="pcard" href={`/stock?sku=${encodeURIComponent(p.sku)}`} scroll={false}>
+            <Link key={p.id} className="pcard" href={`/stock?sku=${encodeURIComponent(p.sku)}${cat ? `&cat=${cat}` : ''}`} scroll={false}>
               <div className="ph">
-                <div style={{ minWidth: 0 }}><div className="xs muted">{p.name}</div><h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>{p.option_name || p.name}</h3><div className="mono xs muted">{p.sku}</div></div>
+                <div className="pimg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {p.image_url ? <img src={p.image_url} alt="" loading="lazy" /> : <IconCamera size={18} />}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}><div className="xs muted">{p.name}</div><h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>{p.option_name || p.name}</h3><div className="mono xs muted">{p.sku}</div></div>
                 <DataMatrixMini text={p.sku} fg={p.dm_fg} bg={p.dm_bg} />
               </div>
               <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
@@ -79,7 +96,30 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
         </div>
       </div>
 
-      {open && <ProductSheet p={open} tab={sp.tab ?? 'stock'} closeHref="/stock" />}
+      {open && <ProductSheet p={open} tab={sp.tab ?? 'stock'} closeHref={back} />}
+      {sp.cats && (
+        <SheetFrame closeHref={back} head={<h2>หมวดหมู่</h2>}>
+          <ActionForm action={createCategory} className="formcard" resetOnSuccess>
+            <div className="field"><label htmlFor="cn">เพิ่มหมวดใหม่</label><input id="cn" name="name" className="input" required placeholder="เช่น น้ำหอม" /></div>
+            <Submit>เพิ่มหมวด</Submit>
+          </ActionForm>
+          {categories.length > 0 && (
+            <div className="sect">
+              <span className="cap">แก้ชื่อหมวด</span>
+              {categories.map((c) => (
+                <ActionForm key={c.id} action={renameCategory} className="formcard">
+                  <input type="hidden" name="category_id" value={c.id} />
+                  <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
+                    <input name="name" className="input" defaultValue={c.name} required aria-label="ชื่อหมวด" style={{ flex: 1 }} />
+                    <Submit className="btn">บันทึก</Submit>
+                  </div>
+                </ActionForm>
+              ))}
+            </div>
+          )}
+          <p className="xs muted" style={{ margin: 0 }}>ใส่สินค้าเข้าหมวด: กดการ์ดสินค้า → แท็บ “ข้อมูล” → เลือกหมวดหมู่</p>
+        </SheetFrame>
+      )}
       {sp.order && <OrderSheet id={sp.order} closeHref="/stock" />}
       {sp.moves && (
         <SheetFrame closeHref="/stock" head={<h2>ความเคลื่อนไหวทั้งหมด</h2>}>

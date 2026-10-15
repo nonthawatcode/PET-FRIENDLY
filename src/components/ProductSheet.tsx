@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { adjustStock, bindListing, receiveStock, saveProduct, unbindListing } from '@/app/actions'
-import { getListings, getMovements } from '@/lib/data'
+import { getCategories, getListings, getMovements } from '@/lib/data'
 import { PLATFORM } from '@/lib/format'
 import type { Platform, ProductStock } from '@/lib/types'
 import { ActionForm, Submit } from './ActionForm'
@@ -9,6 +9,7 @@ import { DataMatrixMini } from './DataMatrix'
 import { DmEditor } from './DmEditor'
 import { IconLock } from './icons'
 import { MoveRow } from './MoveRow'
+import { ProductImageUpload } from './ProductImageUpload'
 import { SheetFrame } from './SheetFrame'
 
 const TABS = [['stock', 'สต็อก'], ['dm', 'Data Matrix'], ['info', 'ข้อมูล'], ['history', 'ประวัติ']] as const
@@ -16,9 +17,10 @@ const TABS = [['stock', 'สต็อก'], ['dm', 'Data Matrix'], ['info', 'ข
 export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab: string; closeHref: string }) {
   const t = TABS.some(([k]) => k === tab) ? tab : 'stock'
   const href = (k: string) => `/stock?sku=${encodeURIComponent(p.sku)}&tab=${k}`
-  const [listings, moves] = await Promise.all([
+  const [listings, moves, categories] = await Promise.all([
     t === 'stock' ? getListings(p.id) : Promise.resolve([]),
     t === 'history' ? getMovements({ productId: p.id, limit: 200 }) : Promise.resolve([]),
+    t === 'info' ? getCategories() : Promise.resolve([]),
   ])
 
   return (
@@ -92,10 +94,16 @@ export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab
 
       {t === 'info' && (
         <>
+          <ProductImageUpload productId={p.id} url={p.image_url} />
           <ActionForm action={saveProduct} className="formcard">
             <input type="hidden" name="product_id" value={p.id} />
             <div className="field"><label htmlFor="pn">ชื่อสินค้า</label><input id="pn" name="name" className="input" defaultValue={p.name} required /></div>
             <div className="field"><label htmlFor="po">กลิ่น / ตัวเลือก</label><input id="po" name="option_name" className="input" defaultValue={p.option_name} /></div>
+            <div className="field"><label htmlFor="pc">หมวดหมู่</label>
+              <select id="pc" name="category_id" className="input" defaultValue={p.category_id ?? ''}>
+                <option value="">— ไม่มีหมวด —</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select></div>
             <div className="field"><label htmlFor="pt">แจ้งเตือนเมื่อพร้อมขายเหลือ</label><input id="pt" name="threshold" className="input" type="number" min={0} defaultValue={p.low_stock_threshold} /></div>
             <Submit>บันทึก</Submit>
           </ActionForm>

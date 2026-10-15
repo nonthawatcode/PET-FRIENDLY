@@ -378,3 +378,6 @@ body{margin:0;position:relative}
 .np-ic.k-handover_overdue{background:var(--warn-soft);color:var(--warn)}
 .np-f{display:block;text-align:center;padding:12px;font-weight:600;color:var(--accent);font-size:.9rem}
 @media (max-width:520px){.notepanel{position:fixed;left:12px;right:12px;width:auto;top:calc(64px + env(safe-area-inset-top,0px))}}
+.pimg{width:52px;height:52px;border-radius:12px;flex:none;background:var(--fill);color:var(--faint);display:grid;place-items:center;overflow:hidden}
+.pimg img{width:100%;height:100%;object-fit:cover;display:block}
+.pimg.lg{width:88px;height:88px;border-radius:16px}
