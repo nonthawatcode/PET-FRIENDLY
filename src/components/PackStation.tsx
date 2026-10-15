@@ -171,6 +171,37 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
     else void openLabel(code)
   }
 
+  // Scanner typing while the scan box is not selected (phones keep it unselected so the
+  // on-screen keyboard stays away): collect the keys anywhere on the page.
+  const handleRef = useRef(handle)
+  handleRef.current = handle
+  useEffect(() => {
+    let buf = '', last = 0
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t?.closest('input,textarea,select,[contenteditable="true"]') || camOpenRef.current) return
+      const now = Date.now()
+      if (now - last > 1000) buf = ''
+      last = now
+      if (e.key === 'Enter') {
+        if (!buf) return
+        e.preventDefault()
+        const v = buf
+        buf = ''
+        if (input.current) input.current.value = ''
+        handleRef.current(v)
+        return
+      }
+      const ch = englishKey(e) ?? (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey ? e.key : null)
+      if (!ch || ch === ' ') return
+      e.preventDefault()
+      buf += ch
+      if (input.current) input.current.value = buf
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
   const sub = phase === 2 ? `${got}/${total} ชิ้น` : phase === 3 ? 'ตรวจแล้วกดยืนยัน' : ''
   return (
     <div className="sect">
