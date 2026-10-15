@@ -8,6 +8,7 @@ import type { Order } from '@/lib/types'
 import { PlatformMark } from './bits'
 import { CameraScanner } from './CameraScanner'
 import { IconCamera, IconCheck, IconScan, IconX } from './icons'
+import { fixThaiKeyboard } from '@/lib/keyboard'
 
 type Product = { id: string; sku: string; option_name: string }
 type Msg = { type: 'ok' | 'bad' | 'warn'; text: string; sub?: string; bindCode?: string; id?: number }
@@ -163,7 +164,7 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
   }
 
   function handle(raw: string) {
-    const code = raw.trim()
+    const code = fixThaiKeyboard(raw.trim())
     if (busy) return
     if (!code) { if (phase === 3) void confirm(); return }
     if (order) scanItem(code)
