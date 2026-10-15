@@ -8,7 +8,7 @@ import type { Order } from '@/lib/types'
 import { PlatformMark } from './bits'
 import { CameraScanner } from './CameraScanner'
 import { IconCamera, IconCheck, IconScan, IconX } from './icons'
-import { fixThaiKeyboard } from '@/lib/keyboard'
+import { englishKey, fixThaiKeyboard } from '@/lib/keyboard'
 
 type Product = { id: string; sku: string; option_name: string }
 type Msg = { type: 'ok' | 'bad' | 'warn'; text: string; sub?: string; bindCode?: string; id?: number }
@@ -211,7 +211,13 @@ export function PackStation({ products, nextOrderId, demoCodes }: { products: Pr
           </button>
           <input ref={input} className="scaninput" autoComplete="off" spellCheck={false} aria-label="ช่องสแกน" disabled={busy}
             placeholder={phase === 1 ? 'สแกนบาร์โค้ดใบปะหน้า…' : phase === 2 ? 'สแกน Data Matrix สินค้าทีละชิ้น…' : 'สแกนใบปะหน้าถัดไป…'}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const v = e.currentTarget.value; e.currentTarget.value = ''; handle(v) } }}
+            autoCapitalize="off" autoCorrect="off"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); const v = e.currentTarget.value; e.currentTarget.value = ''; handle(v); return }
+              // Scanners type like a keyboard: use the key pressed, not the (maybe Thai) letter.
+              const ch = englishKey(e)
+              if (ch) { e.preventDefault(); e.currentTarget.value += ch }
+            }}
             onBlur={() => { if (!busy) setTimeout(() => { if (!document.activeElement || document.activeElement === document.body) focus() }, 50) }} />
         </div>}
 
