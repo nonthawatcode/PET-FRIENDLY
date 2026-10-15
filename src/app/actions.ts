@@ -190,6 +190,14 @@ export async function renameCategory(_: ActionResult | null, fd: FormData): Prom
   return { ok: true, message: 'บันทึกแล้ว' }
 }
 
+export async function deleteCategory(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('categories').delete().eq('id', str(fd, 'category_id'))
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: 'ลบหมวดแล้ว' }
+}
+
 /** The photo is uploaded from the browser first (bucket "brand"); this stores its address. */
 export async function setProductImage(productId: string, url: string): Promise<ActionResult> {
   const sb = await createClient()

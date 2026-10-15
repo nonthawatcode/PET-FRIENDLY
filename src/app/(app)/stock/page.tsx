@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { bindListing, createCategory, createProduct, receiveStock, renameCategory } from '@/app/actions'
+import { bindListing, createCategory, createProduct, deleteCategory, receiveStock, renameCategory } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { PlatformMark } from '@/components/bits'
 import { DataMatrixMini } from '@/components/DataMatrix'
@@ -105,19 +105,25 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
           </ActionForm>
           {categories.length > 0 && (
             <div className="sect">
-              <span className="cap">แก้ชื่อหมวด</span>
+              <span className="cap">แก้ชื่อ / ลบหมวด</span>
               {categories.map((c) => (
-                <ActionForm key={c.id} action={renameCategory} className="formcard">
-                  <input type="hidden" name="category_id" value={c.id} />
-                  <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
-                    <input name="name" className="input" defaultValue={c.name} required aria-label="ชื่อหมวด" style={{ flex: 1 }} />
-                    <Submit className="btn">บันทึก</Submit>
-                  </div>
-                </ActionForm>
+                <div key={c.id} className="formcard">
+                  <ActionForm action={renameCategory}>
+                    <input type="hidden" name="category_id" value={c.id} />
+                    <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
+                      <input name="name" className="input" defaultValue={c.name} required aria-label="ชื่อหมวด" style={{ flex: 1 }} />
+                      <Submit className="btn">บันทึก</Submit>
+                    </div>
+                  </ActionForm>
+                  <ActionForm action={deleteCategory}>
+                    <input type="hidden" name="category_id" value={c.id} />
+                    <Submit className="link quiet" pendingText="กำลังลบ…">ลบหมวดนี้</Submit>
+                  </ActionForm>
+                </div>
               ))}
             </div>
           )}
-          <p className="xs muted" style={{ margin: 0 }}>ใส่สินค้าเข้าหมวด: กดการ์ดสินค้า → แท็บ “ข้อมูล” → เลือกหมวดหมู่</p>
+          <p className="xs muted" style={{ margin: 0 }}>ใส่สินค้าเข้าหมวด: กดการ์ดสินค้า → แท็บ “ข้อมูล” → เลือกหมวดหมู่ · ลบหมวดแล้ว สินค้าในหมวดนั้นจะกลายเป็น “ไม่มีหมวด” (สินค้าไม่หาย)</p>
         </SheetFrame>
       )}
       {sp.order && <OrderSheet id={sp.order} closeHref="/stock" />}
