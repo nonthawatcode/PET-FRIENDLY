@@ -381,3 +381,14 @@ body{margin:0;position:relative}
 .pimg{width:52px;height:52px;border-radius:12px;flex:none;background:var(--fill);color:var(--faint);display:grid;place-items:center;overflow:hidden}
 .pimg img{width:100%;height:100%;object-fit:cover;display:block}
 .pimg.lg{width:88px;height:88px;border-radius:16px}
+.btn.danger{background:var(--bad);color:#fff}
+.adj{gap:14px}
+.adj-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.adj-mode button{border:0;border-radius:14px;padding:14px 8px;font:inherit;font-weight:700;font-size:1rem;background:var(--fill);color:var(--muted);cursor:pointer}
+.adj-mode button.on.add{background:var(--accent);color:var(--accent-ink)}
+.adj-mode button.on.remove{background:var(--bad);color:#fff}
+.adj-qty{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:center}
+.adj-qty button{height:64px;border:0;border-radius:16px;background:var(--fill);color:var(--fg);font:inherit;font-size:1.8rem;font-weight:600;cursor:pointer}
+.adj-qty button:active{transform:scale(.94)}
+.adj-qty input{height:64px;border:0;border-radius:16px;background:var(--fill);color:var(--fg);text-align:center;font:inherit;font-size:1.8rem;font-weight:700;width:100%;min-width:0;-moz-appearance:textfield}
+.adj-qty input::-webkit-outer-spin-button,.adj-qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}

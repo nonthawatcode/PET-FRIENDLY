@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { adjustStock, bindListing, receiveStock, saveProduct, unbindListing } from '@/app/actions'
+import { bindListing, saveProduct, unbindListing } from '@/app/actions'
 import { getCategories, getListings, getMovements } from '@/lib/data'
 import { PLATFORM } from '@/lib/format'
 import type { Platform, ProductStock } from '@/lib/types'
@@ -11,6 +11,7 @@ import { IconLock } from './icons'
 import { MoveRow } from './MoveRow'
 import { ProductImageUpload } from './ProductImageUpload'
 import { SheetFrame } from './SheetFrame'
+import { StockAdjuster } from './StockAdjuster'
 
 const TABS = [['stock', 'สต็อก'], ['dm', 'Data Matrix'], ['info', 'ข้อมูล'], ['history', 'ประวัติ']] as const
 
@@ -45,26 +46,7 @@ export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab
             <div><span className="xs muted">จอง</span><b>{p.reserved}</b></div>
             <div><span className="xs muted">พร้อมขาย</span><b style={{ color: p.is_low ? 'var(--bad)' : undefined }}>{p.available}</b></div>
           </div>
-          <ActionForm action={receiveStock} className="formcard" resetOnSuccess>
-            <h3>รับสินค้าเข้า</h3>
-            <input type="hidden" name="product_id" value={p.id} />
-            <div className="formrow">
-              <div className="field"><label htmlFor="rq">จำนวน</label><input id="rq" name="qty" className="input" type="number" min={1} required /></div>
-              <div className="field"><label htmlFor="rn">หมายเหตุ</label><input id="rn" name="note" className="input" placeholder="เช่น ล็อตจากโรงงาน" /></div>
-            </div>
-            <Submit>บันทึกรับเข้า</Submit>
-          </ActionForm>
-          <details className="formcard">
-            <summary className="link quiet">แก้ไขสต็อก (นับใหม่ ชำรุด ฯลฯ)</summary>
-            <ActionForm action={adjustStock} className="sect" resetOnSuccess>
-              <input type="hidden" name="product_id" value={p.id} />
-              <div className="formrow">
-                <div className="field"><label htmlFor="ad">เพิ่ม/ลด (เช่น -1)</label><input id="ad" name="delta" className="input" type="number" required /></div>
-                <div className="field"><label htmlFor="ar">เหตุผล</label><input id="ar" name="reason" className="input" required placeholder="เช่น นับสต็อกใหม่" /></div>
-              </div>
-              <Submit className="btn">บันทึกการแก้ไข</Submit>
-            </ActionForm>
-          </details>
+          <StockAdjuster productId={p.id} onHand={p.on_hand} />
           <div className="sect">
             <span className="cap">รหัสบน Marketplace</span>
             <div className="group">
