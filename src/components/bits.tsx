@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { PLATFORM, STATUS, hm } from '@/lib/format'
 import type { Order, OrderStatus, Platform } from '@/lib/types'
 import { IconChevron } from './icons'
-import { CopyButton } from './CopyButton'
 
 export function PlatformMark({ p }: { p: Platform }) {
   return (
@@ -35,7 +34,7 @@ export function OrderRow({ o, href, sub }: { o: Order; href: string; sub?: React
     <Link className="rowi" href={href} scroll={false}>
       <PlatformMark p={o.platform} />
       <div className="main">
-        <div className="t1"><span className="mono">{o.external_order_id}</span><CopyButton text={o.external_order_id} />{o.source === 'sample' && <span className="sample-tag">ตัวอย่าง</span>}</div>
+        <div className="t1"><span className="mono">{o.external_order_id}</span>{o.source === 'sample' && <span className="sample-tag">ตัวอย่าง</span>}</div>
         <div className="t2">{sub}</div>
       </div>
       <div className="trail">{orderBadge(o)}<span className="xs muted">{hm(o.ordered_at)}</span></div>

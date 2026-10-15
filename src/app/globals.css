@@ -395,4 +395,3 @@ body{margin:0;position:relative}
 .copybtn{border:0;background:var(--fill);color:var(--muted);border-radius:8px;height:26px;min-width:30px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font:inherit;font-size:.72rem;font-weight:600;cursor:pointer;vertical-align:middle;flex:none}
 .copybtn.done{background:var(--ok-soft);color:var(--ok)}
 .copybtn:active{transform:scale(.92)}
-.rowi .t1{flex-wrap:wrap;row-gap:4px}
