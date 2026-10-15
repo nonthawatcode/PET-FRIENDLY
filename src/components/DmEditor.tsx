@@ -26,8 +26,9 @@ function printableSvg(svg: string, fg: string, bg: string) {
   const w = Number(svg.match(/viewBox="0 0 (\d+)/)?.[1] ?? 0)
   const n = w / 2
   const mm = (n + 2) * MODULE_MM
-  const path = svg.match(/<path[^>]*\/>/)?.[0] ?? ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 ${w + 4} ${w + 4}" width="${mm}mm" height="${mm}mm" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${w + 4}" height="${w + 4}" fill="${bg}"/>${path.replace('<path ', `<path fill="${fg}" `)}</svg>`
+  const d = svg.match(/<path[^>]*\sd="([^"]+)"/)?.[1] ?? ''
+  // A strict XML file (each attribute once) so design and print software can open it.
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-2 -2 ${w + 4} ${w + 4}" width="${mm}mm" height="${mm}mm" shape-rendering="crispEdges">\n<rect x="-2" y="-2" width="${w + 4}" height="${w + 4}" fill="${bg}"/>\n<path d="${d}" fill="${fg}" fill-rule="evenodd"/>\n</svg>\n`
 }
 
 function download(name: string, blob: Blob) {

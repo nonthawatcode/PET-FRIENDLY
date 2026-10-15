@@ -16,7 +16,7 @@ export function useDataMatrix(text: string) {
 }
 
 export function colorize(svg: string, fg: string) {
-  return svg.replace('<path ', `<path fill="${fg}" `)
+  return svg.replace(/fill="#[0-9A-Fa-f]{6}"/, `fill="${fg}"`)
 }
 
 export function modulesOf(svg: string) {
