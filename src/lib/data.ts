@@ -1,7 +1,7 @@
 import 'server-only'
 import { createClient } from './supabase/server'
 import { bkkStart } from './format'
-import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock, Category } from './types'
+import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock, Category, Shop, ShopDoc, ShopMove, ShopStockLine } from './types'
 
 const ORDER_SELECT =
   'id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, handover_id, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))'
@@ -161,4 +161,44 @@ export async function getStaff() {
   const sb = await createClient()
   const { data } = await sb.from('profiles').select('id, display_name, email, disabled').order('created_at')
   return (data ?? []) as { id: string; display_name: string; email: string | null; disabled: boolean }[]
+}
+
+// ---------------------------------------------------------------- consignment shops
+export async function getShops() {
+  const sb = await createClient()
+  const [shops, stock] = await Promise.all([
+    sb.from('shops').select('id, name, contact, phone, address').eq('archived', false).order('created_at'),
+    sb.from('shop_stock').select('shop_id, product_id, qty, products(sku, name, option_name)').gt('qty', 0),
+  ])
+  if (shops.error) throw shops.error
+  const lines = (stock.data ?? []) as unknown as (ShopStockLine & { shop_id: string })[]
+  return ((shops.data ?? []) as Shop[]).map((s) => ({ ...s, stock: lines.filter((l) => l.shop_id === s.id) }))
+}
+
+export async function getShop(id: string) {
+  const sb = await createClient()
+  const [shop, stock, docs, moves] = await Promise.all([
+    sb.from('shops').select('id, name, contact, phone, address').eq('id', id).maybeSingle(),
+    sb.from('shop_stock').select('product_id, qty, products(sku, name, option_name)').eq('shop_id', id).order('product_id'),
+    sb.from('shop_docs').select('id, no, kind, note, created_at, shop_id, profiles(display_name)').eq('shop_id', id).order('created_at', { ascending: false }).limit(50),
+    sb.from('shop_moves').select('id, kind, qty, note, created_at, doc_id, products(sku, name, option_name), profiles:actor(display_name)').eq('shop_id', id).order('created_at', { ascending: false }).limit(100),
+  ])
+  if (!shop.data) return null
+  return {
+    shop: shop.data as Shop,
+    stock: ((stock.data ?? []) as unknown as ShopStockLine[]).sort((a, b) => (a.products?.sku ?? '').localeCompare(b.products?.sku ?? '')),
+    docs: (docs.data ?? []) as unknown as ShopDoc[],
+    moves: (moves.data ?? []) as unknown as ShopMove[],
+  }
+}
+
+export async function getShopDoc(id: string) {
+  const sb = await createClient()
+  const { data: doc } = await sb.from('shop_docs').select('id, no, kind, note, created_at, shop_id, profiles(display_name), shops(name, contact, phone, address)').eq('id', id).maybeSingle()
+  if (!doc) return null
+  const { data: lines } = await sb.from('shop_moves').select('qty, products(sku, name, option_name)').eq('doc_id', id).order('id')
+  return {
+    doc: doc as unknown as ShopDoc & { shops: Shop | null },
+    lines: ((lines ?? []) as unknown as { qty: number; products: { sku: string; name: string; option_name: string } | null }[]).map((l) => ({ ...l, qty: Math.abs(l.qty) })),
+  }
 }

@@ -8,15 +8,32 @@ import { MoveRow } from '@/components/MoveRow'
 import { OrderSheet } from '@/components/OrderSheet'
 import { ProductSheet } from '@/components/ProductSheet'
 import { SheetFrame } from '@/components/SheetFrame'
+import { ShopsView } from '@/components/ShopsView'
 import { getCategories, getMovements, getProducts, getUnmappedSkus } from '@/lib/data'
 import { PLATFORM } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-type SP = { sku?: string; tab?: string; new?: string; moves?: string; order?: string; receive?: string; cat?: string; cats?: string }
+type SP = { sku?: string; tab?: string; new?: string; moves?: string; order?: string; receive?: string; cat?: string; cats?: string; view?: string; send?: string; shop?: string; newshop?: string }
 
 export default async function StockPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
+  const tabs = (shops: boolean) => (
+    <div className="seg" role="tablist" aria-label="มุมมองสต็อก">
+      <Link role="tab" aria-selected={!shops} href="/stock" scroll={false}>สต็อกกลาง</Link>
+      <Link role="tab" aria-selected={shops} href="/stock?view=shops" scroll={false}>ร้านฝากขาย</Link>
+    </div>
+  )
+  if (sp.view === 'shops') {
+    const products = await getProducts()
+    return (
+      <>
+        <div className="lt"><div><h1>สต็อก</h1><p>ของที่ฝากขายอยู่ที่ร้านค้า</p></div></div>
+        {tabs(true)}
+        <ShopsView sp={sp} products={products} />
+      </>
+    )
+  }
   const [products, recent, unmapped, categories] = await Promise.all([getProducts(), getMovements({ limit: 8, hideReservations: true }), getUnmappedSkus(), getCategories()])
   const cat = categories.some((c) => c.id === sp.cat) ? sp.cat : undefined
   const shown = cat ? products.filter((p) => p.category_id === cat) : products
@@ -31,6 +48,7 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
         <div><h1>สต็อก</h1><p>พร้อมขาย = ในคลัง − จอง</p></div>
         {products.length > 0 && <Link className="btn pri" href="/stock?receive=1" scroll={false}><IconIn /> รับสินค้าเข้า</Link>}
       </div>
+      {tabs(false)}
 
       {unmapped.length > 0 && (
         <div className="sect">

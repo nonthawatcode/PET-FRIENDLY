@@ -84,3 +84,38 @@ export interface Category {
   id: string
   name: string
 }
+
+export interface Shop {
+  id: string
+  name: string
+  contact: string | null
+  phone: string | null
+  address: string | null
+}
+
+export interface ShopStockLine {
+  product_id: string
+  qty: number
+  products: { sku: string; name: string; option_name: string } | null
+}
+
+export interface ShopDoc {
+  id: string
+  no: number
+  kind: 'send' | 'return'
+  note: string | null
+  created_at: string
+  shop_id: string
+  profiles: { display_name: string } | null
+}
+
+export interface ShopMove {
+  id: number
+  kind: 'send' | 'sold' | 'return' | 'adjust'
+  qty: number
+  note: string | null
+  created_at: string
+  doc_id: string | null
+  products: { sku: string; option_name: string; name: string } | null
+  profiles: { display_name: string } | null
+}

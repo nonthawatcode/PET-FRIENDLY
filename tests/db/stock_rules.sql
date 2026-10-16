@@ -193,4 +193,34 @@ set role authenticated;
 delete from notifications;
 reset role;
 select pg_temp.check((select count(*) = 0 from notifications), 'staff can clear all notifications');
+-- 16. Consignment shops
+create temp table t_shop as select id from shops where name like 'PETCLUB%' limit 1;
+grant select on t_shop to authenticated;
+create temp table t_before as select product_id, on_hand, reserved from inventory where product_id = (select id from products where sku='PF-FDP-01');
+grant select on t_before to authenticated;
+set role authenticated;
+select public.send_to_shop((select id from t_shop), jsonb_build_object((select id from products where sku='PF-FDP-01')::text, 5));
+reset role;
+select pg_temp.check((select i.on_hand = b.on_hand - 5 from inventory i join t_before b using (product_id)), 'sending to shop takes it out of central stock');
+select pg_temp.check((select qty = 5 from shop_stock where shop_id = (select id from t_shop)), 'shop now holds 5');
+set role authenticated;
+do $$ begin
+  perform public.send_to_shop((select id from t_shop), jsonb_build_object((select id from products where sku='PF-FDP-01')::text, 100000));
+  raise exception 'FAIL: sent more than available';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  cannot send more than available';
+end $$;
+select public.shop_sold((select id from t_shop), (select id from products where sku='PF-FDP-01'), 2);
+select public.return_from_shop((select id from t_shop), jsonb_build_object((select id from products where sku='PF-FDP-01')::text, 1));
+do $$ begin
+  perform public.shop_sold((select id from t_shop), (select id from products where sku='PF-FDP-01'), 10);
+  raise exception 'FAIL: sold more than at shop';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  cannot report more sold than the shop holds';
+end $$;
+reset role;
+select pg_temp.check((select qty = 2 from shop_stock where shop_id = (select id from t_shop)), 'shop holds 2 after selling 2 and returning 1');
+select pg_temp.check((select i.on_hand = b.on_hand - 4 from inventory i join t_before b using (product_id)), 'returned piece is back in central stock');
 \echo ALL TESTS PASSED

@@ -327,3 +327,50 @@ export async function markNotificationsSeen(): Promise<void> {
   await sb.from('profiles').update({ notifications_seen_at: new Date().toISOString() }).eq('id', data.user.id)
   refresh()
 }
+
+// ---------------------------------------------------------------- consignment shops
+export async function saveShop(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const name = str(fd, 'name')
+  if (!name) return { ok: false, error: 'ใส่ชื่อร้านก่อน' }
+  const row = { name, contact: str(fd, 'contact') || null, phone: str(fd, 'phone') || null, address: str(fd, 'address') || null }
+  const id = str(fd, 'shop_id')
+  const sb = await createClient()
+  const { error } = id ? await sb.from('shops').update(row).eq('id', id) : await sb.from('shops').insert(row)
+  if (error) return { ok: false, error: error.code === '23505' ? 'มีร้านชื่อนี้อยู่แล้ว' : errorText(error) }
+  refresh()
+  return { ok: true, message: id ? 'บันทึกแล้ว' : 'เพิ่มร้านแล้ว' }
+}
+
+/** "ลบร้าน": hides the shop; its delivery notes and history are kept. */
+export async function deleteShop(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('shops').update({ archived: true }).eq('id', str(fd, 'shop_id'))
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  redirect('/stock?view=shops')
+}
+
+export async function sendToShop(shopId: string, items: Record<string, number>, note: string): Promise<ActionResult & { docId?: string }> {
+  const sb = await createClient()
+  const { data, error } = await sb.rpc('send_to_shop', { p_shop: shopId, p_items: items, p_note: note || null })
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  pushLater()
+  return { ok: true, docId: data as string }
+}
+
+export async function returnFromShop(shopId: string, items: Record<string, number>, note: string): Promise<ActionResult & { docId?: string }> {
+  const sb = await createClient()
+  const { data, error } = await sb.rpc('return_from_shop', { p_shop: shopId, p_items: items, p_note: note || null })
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, docId: data as string }
+}
+
+export async function shopSold(shopId: string, productId: string, qty: number, note: string): Promise<ActionResult> {
+  return rpc('shop_sold', { p_shop: shopId, p_product: productId, p_qty: qty, p_note: note || null })
+}
+
+export async function shopAdjust(shopId: string, productId: string, delta: number, reason: string): Promise<ActionResult> {
+  return rpc('shop_adjust', { p_shop: shopId, p_product: productId, p_delta: delta, p_reason: reason })
+}

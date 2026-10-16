@@ -81,6 +81,8 @@ const ERRORS: Record<string, string> = {
   photo_required: 'ถ่ายรูปพัสดุอย่างน้อย 1 รูป',
   nothing_selected: 'เลือกกล่องที่จะส่งอย่างน้อย 1 กล่อง',
   nothing_to_hand_over: 'กล่องที่เลือกถูกส่งไปแล้ว หรือยังไม่ได้แพ็ก',
+  shop_not_found: 'ไม่พบร้านค้านี้',
+  shop_stock_short: 'จำนวนเกินของที่อยู่ที่ร้าน',
   '23505': 'ข้อมูลนี้มีอยู่แล้ว',
 }
 
@@ -92,3 +94,6 @@ export function errorText(e: { message?: string; code?: string } | string | null
 }
 
 export const COURIERS = ['SPX Express', 'Flash Express', 'J&T Express', 'Kerry Express', 'Lazada Express', 'ไปรษณีย์ไทย', 'Best Express']
+
+/** Document number shown on delivery / return notes. */
+export const docNo = (d: { kind: 'send' | 'return'; no: number }) => `${d.kind === 'send' ? 'DN' : 'RN'}-${String(d.no).padStart(5, '0')}`
