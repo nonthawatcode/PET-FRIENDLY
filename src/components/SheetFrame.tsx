@@ -7,12 +7,31 @@ import { IconX } from './icons'
 
 const CLOSE_AT = 110 // px dragged down before the sheet closes on release
 
+// Keep the page behind an open sheet from scrolling (iPhone ignores overflow:hidden alone,
+// so pin the body in place and put the scroll position back when the sheet closes).
+let locks = 0
+let savedY = 0
+function lockPage() {
+  if (locks++ > 0) return
+  savedY = window.scrollY
+  const b = document.body.style
+  b.position = 'fixed'; b.top = `-${savedY}px`; b.left = '0'; b.right = '0'; b.width = '100%'
+}
+function unlockPage() {
+  if (--locks > 0) return
+  const b = document.body.style
+  b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = ''
+  window.scrollTo(0, savedY)
+}
+
 export function SheetFrame({
   closeHref, head, children, foot,
 }: { closeHref: string; head: React.ReactNode; children: React.ReactNode; foot?: React.ReactNode }) {
   const router = useRouter()
   const sheet = useRef<HTMLElement>(null)
   const scrim = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => { lockPage(); return unlockPage }, [])
 
   useEffect(() => {
     // Esc also means "stop loading" to the browser, which can cancel the navigation we start,
