@@ -231,3 +231,9 @@ export async function getCapItemId() {
   const { data } = await sb.from('app_settings').select('value').eq('key', 'cap_item_id').maybeSingle()
   return (data?.value as string | undefined) ?? null
 }
+
+export async function getPackagingKinds() {
+  const sb = await createClient()
+  const { data } = await sb.from('packaging_kinds').select('name').order('created_at')
+  return (data ?? []).map((k) => k.name as string)
+}

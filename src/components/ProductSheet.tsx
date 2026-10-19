@@ -96,12 +96,12 @@ export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab
               <div className="field"><label htmlFor="pbt">ขวดที่ใช้</label>
                 <select id="pbt" name="bottle_id" className="input" defaultValue={p.bottle_id ?? ''}>
                   <option value="">— ยังไม่เลือก —</option>
-                  {packaging.filter((x) => x.kind === 'ขวด').map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  {[...new Set(packaging.map((x) => x.kind))].map((kind) => <optgroup key={kind} label={kind}>{packaging.filter((x) => x.kind === kind).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</optgroup>)}
                 </select></div>
               <div className="field"><label htmlFor="pbx">กล่องที่ใช้</label>
                 <select id="pbx" name="box_id" className="input" defaultValue={p.box_id ?? ''}>
                   <option value="">— ยังไม่เลือก —</option>
-                  {packaging.filter((x) => x.kind === 'กล่อง').map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  {[...new Set(packaging.map((x) => x.kind))].map((kind) => <optgroup key={kind} label={kind}>{packaging.filter((x) => x.kind === kind).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</optgroup>)}
                 </select></div>
             </div>
             <div className="field"><label htmlFor="pt">แจ้งเตือนเมื่อพร้อมขายเหลือ</label><input id="pt" name="threshold" className="input" type="number" min={0} defaultValue={p.low_stock_threshold} /></div>

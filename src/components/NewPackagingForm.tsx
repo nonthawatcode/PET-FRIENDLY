@@ -6,7 +6,6 @@ import { savePackaging } from '@/app/actions'
 import { createClient } from '@/lib/supabase/client'
 import { IconCamera, IconX } from './icons'
 
-const KINDS = ['ขวด', 'ฝา', 'กล่อง', 'อื่น ๆ']
 
 async function shrink(file: File): Promise<Blob> {
   const img = await createImageBitmap(file)
@@ -19,7 +18,7 @@ async function shrink(file: File): Promise<Blob> {
 }
 
 /** "เพิ่ม Packaging" form with an optional photo. */
-export function NewPackagingForm() {
+export function NewPackagingForm({ kinds }: { kinds: string[] }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null)
@@ -69,7 +68,7 @@ export function NewPackagingForm() {
       <div className="field"><label htmlFor="pn">ชื่อ</label><input id="pn" name="name" className="input" required placeholder="เช่น ขวดแก้ว 50 ml" /></div>
       <div className="formrow">
         <div className="field"><label htmlFor="pk">ประเภท</label>
-          <select id="pk" name="kind" className="input" defaultValue="ขวด">{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
+          <select id="pk" name="kind" className="input" defaultValue={kinds[0]}>{kinds.map((k) => <option key={k}>{k}</option>)}</select></div>
         <div className="field"><label htmlFor="pp">ราคาต่อชิ้น (บาท)</label><input id="pp" name="unit_price" className="input" type="number" min={0} step="0.01" inputMode="decimal" /></div>
       </div>
       <div className="field"><label htmlFor="pq">จำนวนในคลังตอนนี้</label><input id="pq" name="qty" className="input" type="number" min={0} inputMode="numeric" defaultValue={0} /></div>

@@ -255,4 +255,17 @@ end $$;
 delete from packaging_items where name='ขวด 50ml';
 reset role;
 select pg_temp.check((select count(*) = 0 from packaging_items where name='ขวด 50ml'), 'staff can delete packaging items');
+-- 18. Packaging types
+set role authenticated;
+insert into packaging_kinds (name) values ('สติกเกอร์');
+insert into packaging_items (name, kind, qty) values ('สติกเกอร์โลโก้', 'สติกเกอร์', 5);
+update packaging_kinds set name = 'ฉลาก' where name = 'สติกเกอร์';
+do $$ begin
+  delete from packaging_kinds where name = 'ฉลาก';
+  raise exception 'FAIL: deleted a type that has items';
+exception when foreign_key_violation then
+  raise notice 'ok  type with items cannot be deleted';
+end $$;
+reset role;
+select pg_temp.check((select kind = 'ฉลาก' from packaging_items where name = 'สติกเกอร์โลโก้'), 'renaming a type renames it on items');
 \echo ALL TESTS PASSED

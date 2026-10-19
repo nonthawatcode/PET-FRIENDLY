@@ -442,3 +442,31 @@ export async function deleteDesignFile(_: ActionResult | null, fd: FormData): Pr
   refresh()
   return { ok: true, message: 'ลบแล้ว' }
 }
+
+export async function addPackagingKind(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const name = str(fd, 'name')
+  if (!name) return { ok: false, error: 'ใส่ชื่อประเภทก่อน' }
+  const sb = await createClient()
+  const { error } = await sb.from('packaging_kinds').insert({ name })
+  if (error) return { ok: false, error: error.code === '23505' ? 'มีประเภทนี้อยู่แล้ว' : errorText(error) }
+  refresh()
+  return { ok: true, message: 'เพิ่มประเภทแล้ว' }
+}
+
+export async function renamePackagingKind(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const name = str(fd, 'name')
+  if (!name) return { ok: false, error: 'ใส่ชื่อประเภทก่อน' }
+  const sb = await createClient()
+  const { error } = await sb.from('packaging_kinds').update({ name }).eq('name', str(fd, 'old'))
+  if (error) return { ok: false, error: error.code === '23505' ? 'มีประเภทนี้อยู่แล้ว' : errorText(error) }
+  refresh()
+  return { ok: true, message: 'บันทึกแล้ว' }
+}
+
+export async function deletePackagingKind(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('packaging_kinds').delete().eq('name', str(fd, 'name'))
+  if (error) return { ok: false, error: error.code === '23503' ? 'ยังมีรายการอยู่ในประเภทนี้ ย้ายไปประเภทอื่นหรือลบรายการก่อน' : errorText(error) }
+  refresh()
+  return { ok: true, message: 'ลบประเภทแล้ว' }
+}

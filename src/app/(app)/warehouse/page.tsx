@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { deleteDesignFile, deletePackaging, savePackaging, setCapItem } from '@/app/actions'
+import { addPackagingKind, deleteDesignFile, deletePackaging, deletePackagingKind, renamePackagingKind, savePackaging, setCapItem } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { DesignUpload } from '@/components/DesignUpload'
 import { IconCamera, IconFile } from '@/components/icons'
@@ -7,25 +7,24 @@ import { NewPackagingForm } from '@/components/NewPackagingForm'
 import { PackagingAdjuster } from '@/components/PackagingAdjuster'
 import { ProductImageUpload } from '@/components/ProductImageUpload'
 import { SheetFrame } from '@/components/SheetFrame'
-import { getCapItemId, getDesignFiles, getPackaging } from '@/lib/data'
+import { getCapItemId, getDesignFiles, getPackaging, getPackagingKinds } from '@/lib/data'
 import { when } from '@/lib/format'
 import type { PackagingItem } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
-type SP = { tab?: string; item?: string; new?: string }
-const KINDS = ['ขวด', 'ฝา', 'กล่อง', 'อื่น ๆ']
+type SP = { tab?: string; item?: string; new?: string; kinds?: string }
 const baht = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const size = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
 
-function PackagingForm({ item }: { item: PackagingItem }) {
+function PackagingForm({ item, kinds }: { item: PackagingItem; kinds: string[] }) {
   return (
     <ActionForm action={savePackaging} className="formcard">
       <input type="hidden" name="item_id" value={item.id} />
       <div className="field"><label htmlFor="pn">ชื่อ</label><input id="pn" name="name" className="input" defaultValue={item.name} required placeholder="เช่น ขวดแก้ว 50 ml" /></div>
       <div className="formrow">
         <div className="field"><label htmlFor="pk">ประเภท</label>
-          <select id="pk" name="kind" className="input" defaultValue={item.kind ?? 'ขวด'}>{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
+          <select id="pk" name="kind" className="input" defaultValue={item.kind}>{kinds.map((k) => <option key={k}>{k}</option>)}</select></div>
         <div className="field"><label htmlFor="pp">ราคาต่อชิ้น (บาท)</label><input id="pp" name="unit_price" className="input" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={item.unit_price ?? ''} /></div>
       </div>
       <div className="field"><label htmlFor="pnote">หมายเหตุ</label><input id="pnote" name="note" className="input" defaultValue={item.note ?? ''} placeholder="เช่น ผู้ขาย, สี, ขนาด" /></div>
@@ -37,7 +36,10 @@ function PackagingForm({ item }: { item: PackagingItem }) {
 export default async function WarehousePage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
   const design = sp.tab === 'design'
-  const [items, files, capId] = await Promise.all([design ? Promise.resolve([]) : getPackaging(), design ? getDesignFiles() : Promise.resolve([]), getCapItemId()])
+  const [items, files, capId, kinds] = await Promise.all([design ? Promise.resolve([]) : getPackaging(), design ? getDesignFiles() : Promise.resolve([]), getCapItemId(), getPackagingKinds()])
+  const grouped = (list: PackagingItem[]) => kinds.filter((k) => list.some((i) => i.kind === k)).map((k) => (
+    <optgroup key={k} label={k}>{list.filter((i) => i.kind === k).map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</optgroup>
+  ))
   const open = sp.item ? items.find((i) => i.id === sp.item) : undefined
 
   return (
@@ -50,7 +52,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
 
       {!design && (
         <>
-          {KINDS.filter((k) => items.some((i) => i.kind === k)).map((k) => (
+          {kinds.filter((k) => items.some((i) => i.kind === k)).map((k) => (
             <div className="sect" key={k}>
               <span className="cap">{k}</span>
               <div className="group">
@@ -69,13 +71,14 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
           ))}
           {!items.length && <div className="group"><div className="empty-state">ยังไม่มีรายการ Packaging</div></div>}
           <Link className="btn ink" href="/warehouse?new=1" scroll={false}>+ เพิ่ม Packaging</Link>
+          <Link className="link" href="/warehouse?kinds=1" scroll={false} style={{ justifySelf: 'start' }}>เพิ่ม / แก้ / ลบ ประเภท</Link>
           <div className="sect">
             <span className="cap">ฝาที่ใช้กับทุกกลิ่น</span>
             <ActionForm action={setCapItem} className="formcard">
               <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
                 <select name="cap_id" className="input" defaultValue={capId ?? ''} aria-label="ฝาที่ใช้กับทุกกลิ่น" style={{ flex: 1 }}>
                   <option value="">— ยังไม่เลือก —</option>
-                  {items.filter((i) => i.kind === 'ฝา').map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  {grouped(items)}
                 </select>
                 <Submit className="btn">บันทึก</Submit>
               </div>
@@ -110,7 +113,34 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
 
       {sp.new && (
         <SheetFrame closeHref="/warehouse" head={<h2>เพิ่ม Packaging</h2>}>
-          <NewPackagingForm />
+          <NewPackagingForm kinds={kinds} />
+        </SheetFrame>
+      )}
+      {sp.kinds && (
+        <SheetFrame closeHref="/warehouse" head={<h2>ประเภท Packaging</h2>}>
+          <ActionForm action={addPackagingKind} className="formcard" resetOnSuccess>
+            <div className="field"><label htmlFor="kn">เพิ่มประเภทใหม่</label><input id="kn" name="name" className="input" required placeholder="เช่น สติกเกอร์, ถุง" /></div>
+            <Submit>เพิ่มประเภท</Submit>
+          </ActionForm>
+          <div className="sect">
+            <span className="cap">แก้ชื่อ / ลบประเภท</span>
+            {kinds.map((k) => (
+              <div key={k} className="formcard">
+                <ActionForm action={renamePackagingKind}>
+                  <input type="hidden" name="old" value={k} />
+                  <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
+                    <input name="name" className="input" defaultValue={k} required aria-label="ชื่อประเภท" style={{ flex: 1 }} />
+                    <Submit className="btn">บันทึก</Submit>
+                  </div>
+                </ActionForm>
+                <ActionForm action={deletePackagingKind}>
+                  <input type="hidden" name="name" value={k} />
+                  <Submit className="link quiet" pendingText="กำลังลบ…">ลบประเภทนี้</Submit>
+                </ActionForm>
+              </div>
+            ))}
+          </div>
+          <p className="xs muted" style={{ margin: 0 }}>ลบได้เฉพาะประเภทที่ไม่มีรายการอยู่ · แก้ชื่อแล้ว รายการในประเภทนั้นจะเปลี่ยนตามเอง</p>
         </SheetFrame>
       )}
       {open && (
@@ -122,7 +152,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
           <PackagingAdjuster id={open.id} qty={open.qty} />
           <span className="cap">แก้ไขข้อมูล</span>
           <ProductImageUpload productId={open.id} url={open.image_url} packaging />
-          <PackagingForm item={open} />
+          <PackagingForm item={open} kinds={kinds} />
           <ActionForm action={deletePackaging}>
             <input type="hidden" name="item_id" value={open.id} />
             <Submit className="link quiet" pendingText="กำลังลบ…">ลบรายการนี้</Submit>
