@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { bindListing, saveProduct, unbindListing } from '@/app/actions'
-import { getCategories, getListings, getMovements } from '@/lib/data'
+import { getCapItemId, getCategories, getListings, getMovements, getPackaging } from '@/lib/data'
 import { PLATFORM } from '@/lib/format'
 import type { Platform, ProductStock } from '@/lib/types'
 import { ActionForm, Submit } from './ActionForm'
@@ -18,11 +18,17 @@ const TABS = [['stock', 'สต็อก'], ['dm', 'Data Matrix'], ['info', 'ข
 export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab: string; closeHref: string }) {
   const t = TABS.some(([k]) => k === tab) ? tab : 'stock'
   const href = (k: string) => `/stock?sku=${encodeURIComponent(p.sku)}&tab=${k}`
-  const [listings, moves, categories] = await Promise.all([
+  const [listings, moves, categories, packaging, capId] = await Promise.all([
     t === 'stock' ? getListings(p.id) : Promise.resolve([]),
     t === 'history' ? getMovements({ productId: p.id, limit: 200 }) : Promise.resolve([]),
     t === 'info' ? getCategories() : Promise.resolve([]),
+    t === 'info' ? getPackaging() : Promise.resolve([]),
+    t === 'info' ? getCapItemId() : Promise.resolve(null),
   ])
+  const part = (id: string | null) => packaging.find((x) => x.id === id)
+  const parts = [['ขวด', part(p.bottle_id)], ['ฝา', part(capId)], ['กล่อง', part(p.box_id)]] as const
+  const cost = parts.reduce((n, [, x]) => n + (x?.unit_price ?? 0), 0)
+  const money = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   return (
     <SheetFrame
@@ -86,9 +92,31 @@ export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab
                 <option value="">— ไม่มีหมวด —</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select></div>
+            <div className="formrow">
+              <div className="field"><label htmlFor="pbt">ขวดที่ใช้</label>
+                <select id="pbt" name="bottle_id" className="input" defaultValue={p.bottle_id ?? ''}>
+                  <option value="">— ยังไม่เลือก —</option>
+                  {packaging.filter((x) => x.kind === 'ขวด').map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select></div>
+              <div className="field"><label htmlFor="pbx">กล่องที่ใช้</label>
+                <select id="pbx" name="box_id" className="input" defaultValue={p.box_id ?? ''}>
+                  <option value="">— ยังไม่เลือก —</option>
+                  {packaging.filter((x) => x.kind === 'กล่อง').map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select></div>
+            </div>
             <div className="field"><label htmlFor="pt">แจ้งเตือนเมื่อพร้อมขายเหลือ</label><input id="pt" name="threshold" className="input" type="number" min={0} defaultValue={p.low_stock_threshold} /></div>
             <Submit>บันทึก</Submit>
           </ActionForm>
+          <div className="sect">
+            <span className="cap">ต้นทุน Packaging ต่อชิ้น</span>
+            <div className="group kvg">
+              {parts.map(([k, x]) => (
+                <div className="rowi noicon" key={k}><span className="k">{k}</span><span className="v">{x ? <>{x.name} · <b>{money(x.unit_price)}</b> บาท</> : <span className="muted">ยังไม่เลือก</span>}</span></div>
+              ))}
+              <div className="rowi noicon"><span className="k"><b>รวมต่อชิ้น</b></span><span className="v"><b>{money(cost)} บาท</b></span></div>
+            </div>
+            <p className="xs muted" style={{ margin: '0 6px' }}>ทุกครั้งที่เพิ่มสต็อกกลิ่นนี้ ระบบจะตัดขวด ฝา และกล่อง อย่างละ 1 ชิ้นต่อ 1 ขวด ฝาเลือกที่หน้าโกดัง (ใช้ร่วมกันทุกกลิ่น)</p>
+          </div>
           <div className="group"><div className="rowi"><span className="ic"><IconLock /></span><div className="main"><div className="t1 mono">{p.sku}</div><div className="t2">SKU ล็อกแล้ว เพราะพิมพ์ลงบรรจุภัณฑ์</div></div></div></div>
         </>
       )}

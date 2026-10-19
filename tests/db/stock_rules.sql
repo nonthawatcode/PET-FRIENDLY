@@ -109,7 +109,25 @@ reset role;
 select public.ingest_order('shopee', 'SO-UNPAID', now(), '[{"sku":"SP-FDP02","qty":1}]', null, null, 890, 'unpaid', 'UNPAID', null, 'sample');
 set role authenticated;
 select pg_temp.check((public.start_pack('SO-UNPAID') ->> 'error') = 'unpaid', 'unpaid order cannot be packed');
+do $$ begin
+  perform public.receive_stock((select id from products where sku='PF-FDP-03'), 12, 'x');
+  raise exception 'FAIL: receive without packaging set';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  receive needs bottle, cap and box set';
+end $$;
+insert into packaging_items (name, kind, qty, unit_price) values ('T-bottle', 'ขวด', 20, 10), ('T-cap', 'ฝา', 100, 2), ('T-box', 'กล่อง', 20, 5);
+insert into app_settings (key, value) values ('cap_item_id', to_jsonb((select id from packaging_items where name='T-cap')::text));
+update products set bottle_id = (select id from packaging_items where name='T-bottle'), box_id = (select id from packaging_items where name='T-box') where sku='PF-FDP-03';
+do $$ begin
+  perform public.receive_stock((select id from products where sku='PF-FDP-03'), 21, 'x');
+  raise exception 'FAIL: receive with too little packaging';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  receive blocked when packaging is short';
+end $$;
 select public.receive_stock((select id from products where sku='PF-FDP-03'), 12, 'รับจากโรงงาน');
+select pg_temp.check((select string_agg(qty::text, ',' order by name) from packaging_items where name like 'T-%') = '8,8,88', 'receive uses 1 bottle + 1 cap + 1 box per piece');
 select pg_temp.check((select on_hand = 30 from pg_temp.inv('PF-FDP-03')), 'receive +12');
 do $$ begin
   perform public.adjust_stock((select id from products where sku='PF-FDP-03'), -500, 'test');

@@ -39,6 +39,7 @@ export function StockAdjuster({ productId, onHand }: { productId: string; onHand
       </div>
       <div className="small muted" style={{ textAlign: 'center' }}>
         ในคลัง {onHand} → <b>{add ? onHand + n : onHand - n}</b> ชิ้น
+        {add && <div className="xs">จะตัดขวด ฝา กล่อง อย่างละ {n} ชิ้นจากโกดัง</div>}
       </div>
       <input className="input" value={note} onChange={(e) => setNote(e.target.value)}
         placeholder={add ? 'หมายเหตุ (ไม่ใส่ก็ได้) เช่น ล็อตจากโรงงาน' : 'เหตุผลที่ลด เช่น ชำรุด, นับใหม่'} aria-label={add ? 'หมายเหตุ' : 'เหตุผลที่ลด'} />

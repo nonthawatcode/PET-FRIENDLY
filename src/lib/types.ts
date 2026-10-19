@@ -13,6 +13,8 @@ export interface ProductStock {
   dm_bg: string
   image_url: string | null
   category_id: string | null
+  bottle_id: string | null
+  box_id: string | null
   archived: boolean
   on_hand: number
   reserved: number

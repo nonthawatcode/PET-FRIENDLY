@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import { deleteDesignFile, deletePackaging, savePackaging } from '@/app/actions'
+import { deleteDesignFile, deletePackaging, savePackaging, setCapItem } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { DesignUpload } from '@/components/DesignUpload'
 import { IconCamera, IconFile } from '@/components/icons'
 import { PackagingAdjuster } from '@/components/PackagingAdjuster'
 import { ProductImageUpload } from '@/components/ProductImageUpload'
 import { SheetFrame } from '@/components/SheetFrame'
-import { getDesignFiles, getPackaging } from '@/lib/data'
+import { getCapItemId, getDesignFiles, getPackaging } from '@/lib/data'
 import { when } from '@/lib/format'
 import type { PackagingItem } from '@/lib/types'
 
@@ -37,7 +37,7 @@ function PackagingForm({ item }: { item?: PackagingItem }) {
 export default async function WarehousePage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
   const design = sp.tab === 'design'
-  const [items, files] = await Promise.all([design ? Promise.resolve([]) : getPackaging(), design ? getDesignFiles() : Promise.resolve([])])
+  const [items, files, capId] = await Promise.all([design ? Promise.resolve([]) : getPackaging(), design ? getDesignFiles() : Promise.resolve([]), getCapItemId()])
   const open = sp.item ? items.find((i) => i.id === sp.item) : undefined
 
   return (
@@ -69,6 +69,19 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
           ))}
           {!items.length && <div className="group"><div className="empty-state">ยังไม่มีรายการ Packaging</div></div>}
           <Link className="btn ink" href="/warehouse?new=1" scroll={false}>+ เพิ่ม Packaging</Link>
+          <div className="sect">
+            <span className="cap">ฝาที่ใช้กับทุกกลิ่น</span>
+            <ActionForm action={setCapItem} className="formcard">
+              <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
+                <select name="cap_id" className="input" defaultValue={capId ?? ''} aria-label="ฝาที่ใช้กับทุกกลิ่น" style={{ flex: 1 }}>
+                  <option value="">— ยังไม่เลือก —</option>
+                  {items.filter((i) => i.kind === 'ฝา').map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                </select>
+                <Submit className="btn">บันทึก</Submit>
+              </div>
+              <p className="xs muted" style={{ margin: 0 }}>เพิ่มสต็อกสินค้า 1 ขวด = ตัดขวด 1 + ฝา 1 + กล่อง 1 · ขวดกับกล่องของแต่ละกลิ่น เลือกที่ สต็อก → การ์ดสินค้า → ข้อมูล</p>
+            </ActionForm>
+          </div>
         </>
       )}
 

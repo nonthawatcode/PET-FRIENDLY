@@ -148,7 +148,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
   const sb = await createClient()
   const { error } = await sb
     .from('products')
-    .update({ name: str(fd, 'name'), option_name: str(fd, 'option_name'), low_stock_threshold: Math.max(0, int(fd, 'threshold') || 0), category_id: str(fd, 'category_id') || null })
+    .update({ name: str(fd, 'name'), option_name: str(fd, 'option_name'), low_stock_threshold: Math.max(0, int(fd, 'threshold') || 0), category_id: str(fd, 'category_id') || null, bottle_id: str(fd, 'bottle_id') || null, box_id: str(fd, 'box_id') || null })
     .eq('id', str(fd, 'product_id'))
   if (error) return { ok: false, error: errorText(error) }
   refresh()
@@ -406,6 +406,18 @@ export async function setPackagingImage(id: string, url: string): Promise<Action
   if (error) return { ok: false, error: errorText(error) }
   refresh()
   return { ok: true, message: 'บันทึกรูปแล้ว' }
+}
+
+/** The cap used on every product (each finished bottle takes one). */
+export async function setCapItem(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const id = str(fd, 'cap_id')
+  const sb = await createClient()
+  const { error } = id
+    ? await sb.from('app_settings').upsert({ key: 'cap_item_id', value: id, updated_at: new Date().toISOString() })
+    : await sb.from('app_settings').delete().eq('key', 'cap_item_id')
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: 'บันทึกแล้ว' }
 }
 
 export async function adjustPackaging(id: string, delta: number): Promise<ActionResult> {

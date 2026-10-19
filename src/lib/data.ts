@@ -225,3 +225,9 @@ export async function getDesignFiles() {
     return { ...f, url: view.data?.signedUrl, downloadUrl: dl.data?.signedUrl }
   }))
 }
+
+export async function getCapItemId() {
+  const sb = await createClient()
+  const { data } = await sb.from('app_settings').select('value').eq('key', 'cap_item_id').maybeSingle()
+  return (data?.value as string | undefined) ?? null
+}
