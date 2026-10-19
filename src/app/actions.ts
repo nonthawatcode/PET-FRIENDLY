@@ -374,3 +374,51 @@ export async function shopSold(shopId: string, productId: string, qty: number, n
 export async function shopAdjust(shopId: string, productId: string, delta: number, reason: string): Promise<ActionResult> {
   return rpc('shop_adjust', { p_shop: shopId, p_product: productId, p_delta: delta, p_reason: reason })
 }
+
+// ---------------------------------------------------------------- warehouse (โกดัง)
+export async function savePackaging(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const name = str(fd, 'name')
+  if (!name) return { ok: false, error: 'ใส่ชื่อก่อน' }
+  const price = Number(str(fd, 'unit_price') || 0)
+  if (!Number.isFinite(price) || price < 0) return { ok: false, error: 'ราคาต่อชิ้นไม่ถูกต้อง' }
+  const row = { name, kind: str(fd, 'kind') || 'อื่น ๆ', unit_price: price, note: str(fd, 'note') || null, updated_at: new Date().toISOString() }
+  const id = str(fd, 'item_id')
+  const sb = await createClient()
+  const { error } = id
+    ? await sb.from('packaging_items').update(row).eq('id', id)
+    : await sb.from('packaging_items').insert({ ...row, qty: Math.max(0, int(fd, 'qty') || 0) })
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: id ? 'บันทึกแล้ว' : 'เพิ่มแล้ว' }
+}
+
+export async function deletePackaging(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('packaging_items').delete().eq('id', str(fd, 'item_id'))
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  redirect('/warehouse')
+}
+
+export async function adjustPackaging(id: string, delta: number): Promise<ActionResult> {
+  return rpc('adjust_packaging', { p_item: id, p_delta: delta })
+}
+
+/** The file itself is uploaded from the browser to the "design" bucket first. */
+export async function addDesignFile(f: { name: string; path: string; size: number; mime: string }): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('design_files').insert(f)
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true }
+}
+
+export async function deleteDesignFile(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sb = await createClient()
+  const { data } = await sb.from('design_files').select('path').eq('id', str(fd, 'file_id')).maybeSingle()
+  if (data?.path) await sb.storage.from('design').remove([data.path])
+  const { error } = await sb.from('design_files').delete().eq('id', str(fd, 'file_id'))
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: 'ลบแล้ว' }
+}

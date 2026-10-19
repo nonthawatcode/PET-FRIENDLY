@@ -1,7 +1,7 @@
 import 'server-only'
 import { createClient } from './supabase/server'
 import { bkkStart } from './format'
-import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock, Category, Shop, ShopDoc, ShopMove, ShopStockLine } from './types'
+import type { Movement, Notice, Order, OrderStatus, Platform, ProductStock, Category, Shop, ShopDoc, ShopMove, ShopStockLine, PackagingItem, DesignFile } from './types'
 
 const ORDER_SELECT =
   'id, platform, external_order_id, source, ordered_at, buyer_name, recipient_name, total_amount, status, marketplace_state, marketplace_status, tracking_number, needs_attention, packed_at, packed_by, shipped_at, handover_id, order_items(id, line_no, platform_sku, title, product_id, quantity, listing_quantity, unit_price, reserved_qty, returned_qty, products(sku, name, option_name))'
@@ -201,4 +201,27 @@ export async function getShopDoc(id: string) {
     doc: doc as unknown as ShopDoc & { shops: Shop | null },
     lines: ((lines ?? []) as unknown as { qty: number; products: { sku: string; name: string; option_name: string } | null }[]).map((l) => ({ ...l, qty: Math.abs(l.qty) })),
   }
+}
+
+// ---------------------------------------------------------------- warehouse (โกดัง)
+export async function getPackaging() {
+  const sb = await createClient()
+  const { data, error } = await sb.from('packaging_items').select('id, name, kind, qty, unit_price, note').order('kind').order('name')
+  if (error) throw error
+  return ((data ?? []) as PackagingItem[]).map((p) => ({ ...p, unit_price: Number(p.unit_price) }))
+}
+
+export async function getDesignFiles() {
+  const sb = await createClient()
+  const { data, error } = await sb.from('design_files').select('id, name, path, size, mime, note, created_at, profiles(display_name)').order('created_at', { ascending: false })
+  if (error) throw error
+  const files = (data ?? []) as unknown as DesignFile[]
+  const bucket = sb.storage.from('design')
+  return Promise.all(files.map(async (f) => {
+    const [view, dl] = await Promise.all([
+      f.mime?.startsWith('image/') ? bucket.createSignedUrl(f.path, 60 * 60) : Promise.resolve({ data: null }),
+      bucket.createSignedUrl(f.path, 60 * 60, { download: f.name }),
+    ])
+    return { ...f, url: view.data?.signedUrl, downloadUrl: dl.data?.signedUrl }
+  }))
 }

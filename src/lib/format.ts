@@ -82,6 +82,7 @@ const ERRORS: Record<string, string> = {
   nothing_selected: 'เลือกกล่องที่จะส่งอย่างน้อย 1 กล่อง',
   nothing_to_hand_over: 'กล่องที่เลือกถูกส่งไปแล้ว หรือยังไม่ได้แพ็ก',
   shop_not_found: 'ไม่พบร้านค้านี้',
+  packaging_short: 'จำนวนในคลังไม่พอให้ลด',
   shop_stock_short: 'จำนวนเกินของที่อยู่ที่ร้าน',
   '23505': 'ข้อมูลนี้มีอยู่แล้ว',
 }

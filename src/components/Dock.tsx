@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { IconOrders, IconPack, IconStock } from './icons'
+import { IconOrders, IconPack, IconStock, IconWarehouse } from './icons'
 
 const ITEMS = [
   { href: '/', label: 'แพ็ก', icon: <IconPack /> },
   { href: '/orders', label: 'ออเดอร์', icon: <IconOrders /> },
   { href: '/stock', label: 'สต็อก', icon: <IconStock /> },
+  { href: '/warehouse', label: 'โกดัง', icon: <IconWarehouse /> },
   { href: '/account', label: 'บัญชี', icon: null },
 ] as const
 
@@ -83,7 +84,7 @@ export function Dock({ pending, low, initials }: { pending: number; low: number;
     }
   }, [])
 
-  const badge = [0, pending, low, 0]
+  const badge = [0, pending, low, 0, 0]
   return (
     <nav ref={dock} className={`dock ${ready ? '' : 'noanim'}`} aria-label="เมนูหลัก">
       <span ref={ind} className="ind" aria-hidden="true" />

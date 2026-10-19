@@ -48,3 +48,9 @@ export const IconCamera = ({ size = 20, ...p }: P) => (
 export const IconCopy = ({ size = 16, ...p }: P) => (
   <svg {...base(size, { strokeWidth: 2, ...p })}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
 )
+export const IconWarehouse = ({ size, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 1.8, ...p })}><path d="M3 21V9l9-5 9 5v12" /><path d="M7 21v-8h10v8M7 17h10" /></svg>
+)
+export const IconFile = ({ size = 18, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 1.8, ...p })}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
+)

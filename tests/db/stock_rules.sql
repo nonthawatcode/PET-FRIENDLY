@@ -223,4 +223,18 @@ end $$;
 reset role;
 select pg_temp.check((select qty = 2 from shop_stock where shop_id = (select id from t_shop)), 'shop holds 2 after selling 2 and returning 1');
 select pg_temp.check((select i.on_hand = b.on_hand - 4 from inventory i join t_before b using (product_id)), 'returned piece is back in central stock');
+-- 17. Warehouse packaging
+set role authenticated;
+insert into packaging_items (name, kind, qty, unit_price) values ('ขวด 50ml', 'ขวด', 10, 12.5);
+select pg_temp.check(public.adjust_packaging((select id from packaging_items where name='ขวด 50ml'), -4) = 6, 'packaging stock goes down');
+do $$ begin
+  perform public.adjust_packaging((select id from packaging_items where name='ขวด 50ml'), -7);
+  raise exception 'FAIL: packaging below zero';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  packaging cannot go below zero';
+end $$;
+delete from packaging_items where name='ขวด 50ml';
+reset role;
+select pg_temp.check((select count(*) = 0 from packaging_items where name='ขวด 50ml'), 'staff can delete packaging items');
 \echo ALL TESTS PASSED

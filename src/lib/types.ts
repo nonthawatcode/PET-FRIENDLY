@@ -119,3 +119,25 @@ export interface ShopMove {
   products: { sku: string; option_name: string; name: string } | null
   profiles: { display_name: string } | null
 }
+
+export interface PackagingItem {
+  id: string
+  name: string
+  kind: string
+  qty: number
+  unit_price: number
+  note: string | null
+}
+
+export interface DesignFile {
+  id: string
+  name: string
+  path: string
+  size: number
+  mime: string | null
+  note: string | null
+  created_at: string
+  profiles: { display_name: string } | null
+  url?: string
+  downloadUrl?: string
+}
