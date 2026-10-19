@@ -6,9 +6,10 @@ import { DesignUpload } from '@/components/DesignUpload'
 import { IconCamera, IconDownload, IconFile, IconPlus } from '@/components/icons'
 import { NewPackagingForm } from '@/components/NewPackagingForm'
 import { PackagingAdjuster } from '@/components/PackagingAdjuster'
+import { PackingRules } from '@/components/PackingRules'
 import { ProductImageUpload } from '@/components/ProductImageUpload'
 import { SheetFrame } from '@/components/SheetFrame'
-import { getCapItemId, getDesignFiles, getPackaging, getPackagingKinds } from '@/lib/data'
+import { getCapItemId, getDesignFiles, getPackaging, getPackagingKinds, getPackingRules } from '@/lib/data'
 import { when } from '@/lib/format'
 import type { PackagingItem } from '@/lib/types'
 
@@ -37,7 +38,7 @@ function PackagingForm({ item, kinds }: { item: PackagingItem; kinds: string[] }
 export default async function WarehousePage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
   const design = sp.tab === 'design'
-  const [items, files, capId, kinds] = await Promise.all([design ? Promise.resolve([]) : getPackaging(), design ? getDesignFiles() : Promise.resolve([]), getCapItemId(), getPackagingKinds()])
+  const [items, files, capId, kinds, rules] = await Promise.all([design ? Promise.resolve([]) : getPackaging(), design ? getDesignFiles() : Promise.resolve([]), getCapItemId(), getPackagingKinds(), design ? Promise.resolve([]) : getPackingRules()])
   const grouped = (list: PackagingItem[]) => kinds.filter((k) => list.some((i) => i.kind === k)).map((k) => (
     <optgroup key={k} label={k}>{list.filter((i) => i.kind === k).map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</optgroup>
   ))
@@ -85,6 +86,10 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
               </div>
               <p className="xs muted" style={{ margin: 0 }}>สินค้า 1 ขวด ใช้ขวด + ฝา + กล่อง อย่างละ 1 ชิ้น</p>
             </ActionForm>
+          </div>
+          <div className="sect">
+            <span className="cap">ของที่ใช้ตอนแพ็ก (ตัดตอนยืนยันแพ็ก)</span>
+            <PackingRules rules={rules} items={items} />
           </div>
         </>
       )}

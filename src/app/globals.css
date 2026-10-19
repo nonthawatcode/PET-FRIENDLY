@@ -434,3 +434,5 @@ body{margin:0;position:relative}
 .editrow{gap:8px} .editrow .input{flex:1;min-width:0;padding:10px 14px}
 .sect-h .fchip{padding:6px 12px;font-size:.82rem}
 .rowi:has(.confirm) .iconbtn:not(.danger){display:none}
+.ruleedit{flex-direction:column;align-items:stretch;gap:8px}
+.ruleedit .input{padding:10px 14px}

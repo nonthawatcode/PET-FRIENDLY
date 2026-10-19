@@ -69,6 +69,7 @@ export async function parkPack(orderId: string): Promise<ActionResult> {
 export async function confirmPack(orderId: string, scanned: Record<string, number>): Promise<ActionResult> {
   const sb = await createClient()
   const { data, error } = await sb.rpc('confirm_pack', { p_order: orderId, p_scanned: scanned })
+  if (error?.message === 'packing_supplies_short') return { ok: false, error: `ของแพ็กในโกดังไม่พอ: ${error.details ?? ''} เติมที่หน้าโกดังก่อน` }
   if (error) return { ok: false, error: errorText(error) }
   const r = data as { ok: boolean; error?: string; already?: boolean }
   if (!r.ok) return { ok: false, error: errorText(r.error) }
@@ -469,4 +470,24 @@ export async function deletePackagingKind(_: ActionResult | null, fd: FormData):
   if (error) return { ok: false, error: error.code === '23503' ? 'ยังมีรายการอยู่ในประเภทนี้ ย้ายไปประเภทอื่นหรือลบรายการก่อน' : errorText(error) }
   refresh()
   return { ok: true, message: 'ลบประเภทแล้ว' }
+}
+
+// Packing supplies used per order / per piece when a pack is confirmed.
+export async function savePackingRule(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const item = str(fd, 'item_id'), per = str(fd, 'per'), qty = int(fd, 'qty')
+  if (!item) return { ok: false, error: 'เลือกรายการก่อน' }
+  if (!(qty > 0)) return { ok: false, error: 'จำนวนต้องมากกว่า 0' }
+  const sb = await createClient()
+  const { error } = await sb.from('packing_rules').upsert({ item_id: item, per: per === 'piece' ? 'piece' : 'order', qty })
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true }
+}
+
+export async function deletePackingRule(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('packing_rules').delete().eq('item_id', str(fd, 'item_id'))
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true }
 }

@@ -268,4 +268,27 @@ exception when foreign_key_violation then
 end $$;
 reset role;
 select pg_temp.check((select kind = 'ฉลาก' from packaging_items where name = 'สติกเกอร์โลโก้'), 'renaming a type renames it on items');
+-- 19. Packing supplies used on confirm pack
+set role authenticated;
+insert into packaging_items (name, kind, qty) values ('กระดาษไข', 'อื่น ๆ', 10), ('กล่องพัสดุ', 'กล่อง', 1);
+insert into packing_rules (item_id, per, qty) values ((select id from packaging_items where name='กระดาษไข'), 'piece', 1), ((select id from packaging_items where name='กล่องพัสดุ'), 'order', 1);
+reset role;
+select public.ingest_order('shopee', 'SO-SUP1', now(), '[{"sku":"SP-FDP01","qty":2}]', null, null, 890, 'ready', 'READY_TO_SHIP', 'TH-SUP1', 'sample');
+select public.ingest_order('shopee', 'SO-SUP2', now(), '[{"sku":"SP-FDP01","qty":1}]', null, null, 890, 'ready', 'READY_TO_SHIP', 'TH-SUP2', 'sample');
+set role authenticated;
+select public.start_pack('TH-SUP1');
+select pg_temp.check((public.confirm_pack((select id from orders where external_order_id='SO-SUP1'), jsonb_build_object((select id from products where sku='PF-FDP-01')::text, 2)) ->> 'ok')::boolean, 'pack with supplies ok');
+reset role;
+select pg_temp.check((select string_agg(qty::text, ',' order by name) from packaging_items where name in ('กระดาษไข', 'กล่องพัสดุ')) = '8,0', 'supplies: 1 per piece + 1 per order used');
+set role authenticated;
+select public.start_pack('TH-SUP2');
+do $$ begin
+  perform public.confirm_pack((select id from orders where external_order_id='SO-SUP2'), jsonb_build_object((select id from products where sku='PF-FDP-01')::text, 1));
+  raise exception 'FAIL: packed without supplies';
+exception when raise_exception then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  pack blocked when supplies are short';
+end $$;
+reset role;
+select pg_temp.check((select status = 'packing' from orders where external_order_id='SO-SUP2'), 'blocked order is still not packed');
 \echo ALL TESTS PASSED

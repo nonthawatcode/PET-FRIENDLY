@@ -237,3 +237,9 @@ export async function getPackagingKinds() {
   const { data } = await sb.from('packaging_kinds').select('name').order('created_at')
   return (data ?? []).map((k) => k.name as string)
 }
+
+export async function getPackingRules() {
+  const sb = await createClient()
+  const { data } = await sb.from('packing_rules').select('item_id, per, qty').order('created_at')
+  return (data ?? []) as { item_id: string; per: 'order' | 'piece'; qty: number }[]
+}
