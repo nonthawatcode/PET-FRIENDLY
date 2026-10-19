@@ -22,7 +22,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   const f: OrderFilters = {
     tab: (TABS.some(([k]) => k === sp.tab) ? sp.tab : 'all') as OrderFilters['tab'],
     q: sp.q ?? '',
-    platform: (['shopee', 'lazada', 'tiktok'].includes(sp.platform ?? '') ? sp.platform : 'all') as OrderFilters['platform'],
+    platform: (['shopee', 'lazada', 'tiktok', 'line'].includes(sp.platform ?? '') ? sp.platform : 'all') as OrderFilters['platform'],
     range: (['today', '7', '30', 'all'].includes(sp.range ?? '') ? sp.range : '7') as OrderFilters['range'],
   }
   const base = await getOrders(f)

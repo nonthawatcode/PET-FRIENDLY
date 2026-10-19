@@ -35,7 +35,7 @@ export function OrderFilterBar({ q, platform, range, autoFocus }: { q: string; p
       </div>
       <div className="row">
         <select className="selchip" aria-label="ช่องทาง" value={platform} onChange={(e) => push({ platform: e.target.value === 'all' ? '' : e.target.value })}>
-          <option value="all">ทุกช่องทาง</option><option value="shopee">Shopee</option><option value="lazada">Lazada</option><option value="tiktok">TikTok Shop</option>
+          <option value="all">ทุกช่องทาง</option><option value="shopee">Shopee</option><option value="lazada">Lazada</option><option value="tiktok">TikTok Shop</option><option value="line">LINE SHOPPING</option>
         </select>
         <select className="selchip" aria-label="ช่วงวันที่" value={range} onChange={(e) => push({ range: e.target.value === '7' ? '' : e.target.value })}>
           <option value="today">วันนี้</option><option value="7">7 วัน</option><option value="30">30 วัน</option><option value="all">ทั้งหมด</option>

@@ -1,6 +1,6 @@
 import type { MovementKind, OrderStatus, Platform } from './types'
 
-export const PLATFORM: Record<Platform, string> = { shopee: 'Shopee', lazada: 'Lazada', tiktok: 'TikTok Shop' }
+export const PLATFORM: Record<Platform, string> = { shopee: 'Shopee', lazada: 'Lazada', tiktok: 'TikTok Shop', line: 'LINE SHOPPING' }
 export const STATUS: Record<OrderStatus, string> = {
   pending: 'รอแพ็ก',
   packing: 'กำลังแพ็ก',

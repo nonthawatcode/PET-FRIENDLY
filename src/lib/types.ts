@@ -1,4 +1,4 @@
-export type Platform = 'shopee' | 'lazada' | 'tiktok'
+export type Platform = 'shopee' | 'lazada' | 'tiktok' | 'line'
 export type OrderStatus = 'pending' | 'packing' | 'packed' | 'shipped' | 'cancelled'
 export type MarketplaceState = 'unpaid' | 'ready' | 'shipped' | 'delivered' | 'cancelled'
 export type MovementKind = 'receive' | 'reserve' | 'release' | 'deduct' | 'return' | 'adjust' | 'damage'
