@@ -291,4 +291,8 @@ exception when raise_exception then
 end $$;
 reset role;
 select pg_temp.check((select status = 'packing' from orders where external_order_id='SO-SUP2'), 'blocked order is still not packed');
+set role authenticated;
+select public.unpack_order((select id from orders where external_order_id='SO-SUP1'), 'แพ็กผิด');
+reset role;
+select pg_temp.check((select string_agg(qty::text, ',' order by name) from packaging_items where name in ('กระดาษไข', 'กล่องพัสดุ')) = '10,1', 'undoing a pack puts supplies back');
 \echo ALL TESTS PASSED
