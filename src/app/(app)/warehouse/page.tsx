@@ -3,6 +3,7 @@ import { deleteDesignFile, deletePackaging, savePackaging, setCapItem } from '@/
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { DesignUpload } from '@/components/DesignUpload'
 import { IconCamera, IconFile } from '@/components/icons'
+import { NewPackagingForm } from '@/components/NewPackagingForm'
 import { PackagingAdjuster } from '@/components/PackagingAdjuster'
 import { ProductImageUpload } from '@/components/ProductImageUpload'
 import { SheetFrame } from '@/components/SheetFrame'
@@ -17,19 +18,18 @@ const KINDS = ['ขวด', 'ฝา', 'กล่อง', 'อื่น ๆ']
 const baht = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const size = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
 
-function PackagingForm({ item }: { item?: PackagingItem }) {
+function PackagingForm({ item }: { item: PackagingItem }) {
   return (
-    <ActionForm action={savePackaging} className="formcard" resetOnSuccess={!item}>
-      {item && <input type="hidden" name="item_id" value={item.id} />}
-      <div className="field"><label htmlFor="pn">ชื่อ</label><input id="pn" name="name" className="input" defaultValue={item?.name} required placeholder="เช่น ขวดแก้ว 50 ml" /></div>
+    <ActionForm action={savePackaging} className="formcard">
+      <input type="hidden" name="item_id" value={item.id} />
+      <div className="field"><label htmlFor="pn">ชื่อ</label><input id="pn" name="name" className="input" defaultValue={item.name} required placeholder="เช่น ขวดแก้ว 50 ml" /></div>
       <div className="formrow">
         <div className="field"><label htmlFor="pk">ประเภท</label>
-          <select id="pk" name="kind" className="input" defaultValue={item?.kind ?? 'ขวด'}>{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
-        <div className="field"><label htmlFor="pp">ราคาต่อชิ้น (บาท)</label><input id="pp" name="unit_price" className="input" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={item?.unit_price ?? ''} /></div>
+          <select id="pk" name="kind" className="input" defaultValue={item.kind ?? 'ขวด'}>{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
+        <div className="field"><label htmlFor="pp">ราคาต่อชิ้น (บาท)</label><input id="pp" name="unit_price" className="input" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={item.unit_price ?? ''} /></div>
       </div>
-      {!item && <div className="field"><label htmlFor="pq">จำนวนในคลังตอนนี้</label><input id="pq" name="qty" className="input" type="number" min={0} inputMode="numeric" defaultValue={0} /></div>}
-      <div className="field"><label htmlFor="pnote">หมายเหตุ</label><input id="pnote" name="note" className="input" defaultValue={item?.note ?? ''} placeholder="เช่น ผู้ขาย, สี, ขนาด" /></div>
-      <Submit>{item ? 'บันทึก' : 'เพิ่ม'}</Submit>
+      <div className="field"><label htmlFor="pnote">หมายเหตุ</label><input id="pnote" name="note" className="input" defaultValue={item.note ?? ''} placeholder="เช่น ผู้ขาย, สี, ขนาด" /></div>
+      <Submit>บันทึก</Submit>
     </ActionForm>
   )
 }
@@ -110,7 +110,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
 
       {sp.new && (
         <SheetFrame closeHref="/warehouse" head={<h2>เพิ่ม Packaging</h2>}>
-          <PackagingForm />
+          <NewPackagingForm />
         </SheetFrame>
       )}
       {open && (
@@ -120,8 +120,8 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
             <div><span className="xs muted">ราคาต่อชิ้น</span><b>{baht(open.unit_price)}</b></div>
           </div>
           <PackagingAdjuster id={open.id} qty={open.qty} />
-          <ProductImageUpload productId={open.id} url={open.image_url} packaging />
           <span className="cap">แก้ไขข้อมูล</span>
+          <ProductImageUpload productId={open.id} url={open.image_url} packaging />
           <PackagingForm item={open} />
           <ActionForm action={deletePackaging}>
             <input type="hidden" name="item_id" value={open.id} />

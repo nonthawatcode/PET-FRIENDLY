@@ -381,7 +381,7 @@ export async function savePackaging(_: ActionResult | null, fd: FormData): Promi
   if (!name) return { ok: false, error: 'ใส่ชื่อก่อน' }
   const price = Number(str(fd, 'unit_price') || 0)
   if (!Number.isFinite(price) || price < 0) return { ok: false, error: 'ราคาต่อชิ้นไม่ถูกต้อง' }
-  const row = { name, kind: str(fd, 'kind') || 'อื่น ๆ', unit_price: price, note: str(fd, 'note') || null, updated_at: new Date().toISOString() }
+  const row = { name, kind: str(fd, 'kind') || 'อื่น ๆ', unit_price: price, note: str(fd, 'note') || null, updated_at: new Date().toISOString(), ...(str(fd, 'image_url') ? { image_url: str(fd, 'image_url') } : {}) }
   const id = str(fd, 'item_id')
   const sb = await createClient()
   const { error } = id
