@@ -127,6 +127,7 @@ export interface PackagingItem {
   qty: number
   unit_price: number
   note: string | null
+  image_url: string | null
 }
 
 export interface DesignFile {

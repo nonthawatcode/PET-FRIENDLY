@@ -400,6 +400,14 @@ export async function deletePackaging(_: ActionResult | null, fd: FormData): Pro
   redirect('/warehouse')
 }
 
+export async function setPackagingImage(id: string, url: string): Promise<ActionResult> {
+  const sb = await createClient()
+  const { error } = await sb.from('packaging_items').update({ image_url: url, updated_at: new Date().toISOString() }).eq('id', id)
+  if (error) return { ok: false, error: errorText(error) }
+  refresh()
+  return { ok: true, message: 'บันทึกรูปแล้ว' }
+}
+
 export async function adjustPackaging(id: string, delta: number): Promise<ActionResult> {
   return rpc('adjust_packaging', { p_item: id, p_delta: delta })
 }

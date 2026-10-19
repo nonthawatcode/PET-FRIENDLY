@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { setProductImage } from '@/app/actions'
+import { setPackagingImage, setProductImage } from '@/app/actions'
 import { createClient } from '@/lib/supabase/client'
 import { IconCamera } from './icons'
 
@@ -16,7 +16,8 @@ async function shrink(file: File): Promise<Blob> {
   return new Promise((res) => c.toBlob((b) => res(b ?? file), 'image/jpeg', 0.85))
 }
 
-export function ProductImageUpload({ productId, url }: { productId: string; url: string | null }) {
+/** Photo for a product, or for a packaging item when `packaging` is set. */
+export function ProductImageUpload({ productId, url, packaging = false }: { productId: string; url: string | null; packaging?: boolean }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -27,20 +28,20 @@ export function ProductImageUpload({ productId, url }: { productId: string; url:
     try {
       const blob = await shrink(file)
       const sb = createClient()
-      const path = `products/${productId}-${Date.now()}.jpg`
+      const path = `${packaging ? 'packaging' : 'products'}/${productId}-${Date.now()}.jpg`
       const { error } = await sb.storage.from('brand').upload(path, blob, { contentType: 'image/jpeg' })
       if (error) throw new Error('อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง')
-      const r = await setProductImage(productId, sb.storage.from('brand').getPublicUrl(path).data.publicUrl)
+      const r = await (packaging ? setPackagingImage : setProductImage)(productId, sb.storage.from('brand').getPublicUrl(path).data.publicUrl)
       if (!r.ok) throw new Error(r.error)
       setMsg({ ok: true, text: r.message ?? 'บันทึกรูปแล้ว' })
     } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error && /[฀-๿]/.test(e.message) ? e.message : 'อ่านรูปไม่ได้ ลองรูปอื่น' })
+      setMsg({ ok: false, text: e instanceof Error && /[฀-๿]/.test(e.message) ? e.message : 'บันทึกรูปไม่สำเร็จ ลองใหม่อีกครั้ง' })
     } finally { setBusy(false) }
   }
 
   return (
     <div className="formcard">
-      <h3>รูปสินค้า</h3>
+      <h3>{packaging ? 'รูป' : 'รูปสินค้า'}</h3>
       <div className="row" style={{ gap: 14 }}>
         <div className="pimg lg">
           {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -206,7 +206,7 @@ export async function getShopDoc(id: string) {
 // ---------------------------------------------------------------- warehouse (โกดัง)
 export async function getPackaging() {
   const sb = await createClient()
-  const { data, error } = await sb.from('packaging_items').select('id, name, kind, qty, unit_price, note').order('kind').order('name')
+  const { data, error } = await sb.from('packaging_items').select('id, name, kind, qty, unit_price, note, image_url').order('kind').order('name')
   if (error) throw error
   return ((data ?? []) as PackagingItem[]).map((p) => ({ ...p, unit_price: Number(p.unit_price) }))
 }

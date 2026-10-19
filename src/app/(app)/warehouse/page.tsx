@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { deleteDesignFile, deletePackaging, savePackaging } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
 import { DesignUpload } from '@/components/DesignUpload'
-import { IconFile } from '@/components/icons'
+import { IconCamera, IconFile } from '@/components/icons'
 import { PackagingAdjuster } from '@/components/PackagingAdjuster'
+import { ProductImageUpload } from '@/components/ProductImageUpload'
 import { SheetFrame } from '@/components/SheetFrame'
 import { getDesignFiles, getPackaging } from '@/lib/data'
 import { when } from '@/lib/format'
@@ -55,6 +56,10 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
               <div className="group">
                 {items.filter((i) => i.kind === k).map((i) => (
                   <Link key={i.id} className="rowi" href={`/warehouse?item=${i.id}`} scroll={false}>
+                    <span className="pimg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {i.image_url ? <img src={i.image_url} alt="" loading="lazy" /> : <IconCamera size={18} />}
+                    </span>
                     <div className="main"><div className="t1">{i.name}</div><div className="t2">{baht(i.unit_price)} บาท/ชิ้น{i.note && ` · ${i.note}`}</div></div>
                     <div className="trail"><b className="num">{i.qty.toLocaleString('th-TH')}</b><span className="xs muted">ชิ้น</span></div>
                   </Link>
@@ -102,6 +107,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
             <div><span className="xs muted">ราคาต่อชิ้น</span><b>{baht(open.unit_price)}</b></div>
           </div>
           <PackagingAdjuster id={open.id} qty={open.qty} />
+          <ProductImageUpload productId={open.id} url={open.image_url} packaging />
           <span className="cap">แก้ไขข้อมูล</span>
           <PackagingForm item={open} />
           <ActionForm action={deletePackaging}>
