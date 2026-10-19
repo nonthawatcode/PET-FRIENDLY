@@ -421,3 +421,16 @@ body{margin:0;position:relative}
 .dthumb{width:44px;height:44px;border-radius:10px;background:var(--fill);color:var(--muted);display:grid;place-items:center;overflow:hidden;flex:none}
 .dthumb img{width:100%;height:100%;object-fit:cover;display:block}
 @media (max-width:420px){.dock a{width:64px}}
+/* Tidy edit / delete controls */
+.iconbtn{width:36px;height:36px;border-radius:999px;border:0;background:var(--fill);color:var(--muted);display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn.danger{color:var(--bad)} .iconbtn.ok{background:var(--fg);color:var(--bg)} .iconbtn:disabled{opacity:.4}
+.btn.sm{padding:7px 14px;font-size:.85rem}
+.btn.danger-line{background:none;border:1.5px solid color-mix(in srgb,var(--bad) 35%,transparent);color:var(--bad);width:100%}
+.confirm{display:inline-flex;align-items:center;gap:6px;background:var(--bad-soft);border-radius:999px;padding:4px 4px 4px 12px;flex:none;max-width:100%}
+.confirm .q{font-size:.85rem;font-weight:600;color:var(--bad);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.confirm.block{display:flex;width:100%;border-radius:16px;padding:8px 8px 8px 14px} .confirm.block .q{flex:1}
+.addrow{color:var(--accent);cursor:pointer;font:inherit} .addrow .ic{background:var(--accent-soft);color:var(--accent)} .addrow .t1{font-weight:600}
+.editrow{gap:8px} .editrow .input{flex:1;min-width:0;padding:10px 14px}
+.sect-h .fchip{padding:6px 12px;font-size:.82rem}
+.rowi:has(.confirm) .iconbtn:not(.danger){display:none}

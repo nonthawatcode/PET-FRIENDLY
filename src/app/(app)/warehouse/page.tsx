@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { addPackagingKind, deleteDesignFile, deletePackaging, deletePackagingKind, renamePackagingKind, savePackaging, setCapItem } from '@/app/actions'
 import { ActionForm, Submit } from '@/components/ActionForm'
+import { DeleteButton, EditableList } from '@/components/Editable'
 import { DesignUpload } from '@/components/DesignUpload'
-import { IconCamera, IconFile } from '@/components/icons'
+import { IconCamera, IconDownload, IconFile, IconPlus } from '@/components/icons'
 import { NewPackagingForm } from '@/components/NewPackagingForm'
 import { PackagingAdjuster } from '@/components/PackagingAdjuster'
 import { ProductImageUpload } from '@/components/ProductImageUpload'
@@ -52,6 +53,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
 
       {!design && (
         <>
+          <div className="sect-h"><span className="cap" style={{ padding: 0 }}>Packaging ในคลัง</span><Link className="fchip" href="/warehouse?kinds=1" scroll={false}>จัดการประเภท</Link></div>
           {kinds.filter((k) => items.some((i) => i.kind === k)).map((k) => (
             <div className="sect" key={k}>
               <span className="cap">{k}</span>
@@ -70,8 +72,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
             </div>
           ))}
           {!items.length && <div className="group"><div className="empty-state">ยังไม่มีรายการ Packaging</div></div>}
-          <Link className="btn ink" href="/warehouse?new=1" scroll={false}>+ เพิ่ม Packaging</Link>
-          <Link className="link" href="/warehouse?kinds=1" scroll={false} style={{ justifySelf: 'start' }}>เพิ่ม / แก้ / ลบ ประเภท</Link>
+          <Link className="btn ink" href="/warehouse?new=1" scroll={false}><IconPlus /> เพิ่ม Packaging</Link>
           <div className="sect">
             <span className="cap">ฝาที่ใช้กับทุกกลิ่น</span>
             <ActionForm action={setCapItem} className="formcard">
@@ -82,7 +83,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
                 </select>
                 <Submit className="btn">บันทึก</Submit>
               </div>
-              <p className="xs muted" style={{ margin: 0 }}>เพิ่มสต็อกสินค้า 1 ขวด = ตัดขวด 1 + ฝา 1 + กล่อง 1 · ขวดกับกล่องของแต่ละกลิ่น เลือกที่ สต็อก → การ์ดสินค้า → ข้อมูล</p>
+              <p className="xs muted" style={{ margin: 0 }}>สินค้า 1 ขวด ใช้ขวด + ฝา + กล่อง อย่างละ 1 ชิ้น</p>
             </ActionForm>
           </div>
         </>
@@ -99,11 +100,8 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
                   {f.url ? <img src={f.url} alt="" loading="lazy" /> : <IconFile />}
                 </span>
                 <div className="main"><div className="t1" style={{ wordBreak: 'break-all' }}>{f.name}</div><div className="t2">{size(f.size)} · {when(f.created_at)}{f.profiles?.display_name && ` · ${f.profiles.display_name}`}</div></div>
-                {f.downloadUrl && <a className="btn" href={f.downloadUrl}>ดาวน์โหลด</a>}
-                <ActionForm action={deleteDesignFile}>
-                  <input type="hidden" name="file_id" value={f.id} />
-                  <Submit className="link quiet" pendingText="…">ลบ</Submit>
-                </ActionForm>
+                {f.downloadUrl && <a className="iconbtn" href={f.downloadUrl} aria-label={`ดาวน์โหลด ${f.name}`} title="ดาวน์โหลด"><IconDownload /></a>}
+                <DeleteButton action={deleteDesignFile} fields={{ file_id: f.id }} label={f.name} />
               </div>
             ))}
             {!files.length && <div className="empty-state">ยังไม่มีไฟล์ดีไซน์</div>}
@@ -118,29 +116,10 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
       )}
       {sp.kinds && (
         <SheetFrame closeHref="/warehouse" head={<h2>ประเภท Packaging</h2>}>
-          <ActionForm action={addPackagingKind} className="formcard" resetOnSuccess>
-            <div className="field"><label htmlFor="kn">เพิ่มประเภทใหม่</label><input id="kn" name="name" className="input" required placeholder="เช่น สติกเกอร์, ถุง" /></div>
-            <Submit>เพิ่มประเภท</Submit>
-          </ActionForm>
-          <div className="sect">
-            <span className="cap">แก้ชื่อ / ลบประเภท</span>
-            {kinds.map((k) => (
-              <div key={k} className="formcard">
-                <ActionForm action={renamePackagingKind}>
-                  <input type="hidden" name="old" value={k} />
-                  <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
-                    <input name="name" className="input" defaultValue={k} required aria-label="ชื่อประเภท" style={{ flex: 1 }} />
-                    <Submit className="btn">บันทึก</Submit>
-                  </div>
-                </ActionForm>
-                <ActionForm action={deletePackagingKind}>
-                  <input type="hidden" name="name" value={k} />
-                  <Submit className="link quiet" pendingText="กำลังลบ…">ลบประเภทนี้</Submit>
-                </ActionForm>
-              </div>
-            ))}
-          </div>
-          <p className="xs muted" style={{ margin: 0 }}>ลบได้เฉพาะประเภทที่ไม่มีรายการอยู่ · แก้ชื่อแล้ว รายการในประเภทนั้นจะเปลี่ยนตามเอง</p>
+          <EditableList items={kinds.map((k) => ({ key: k, name: k, sub: `${items.filter((i) => i.kind === k).length} รายการ` }))}
+            add={addPackagingKind} rename={renamePackagingKind} remove={deletePackagingKind} field={{ id: 'old' }}
+            addLabel="เพิ่มประเภท" placeholder="เช่น สติกเกอร์, ถุง" />
+          <p className="xs muted" style={{ margin: 0 }}>ลบได้เฉพาะประเภทที่ไม่มีรายการ</p>
         </SheetFrame>
       )}
       {open && (
@@ -153,10 +132,7 @@ export default async function WarehousePage({ searchParams }: { searchParams: Pr
           <span className="cap">แก้ไขข้อมูล</span>
           <ProductImageUpload productId={open.id} url={open.image_url} packaging />
           <PackagingForm item={open} kinds={kinds} />
-          <ActionForm action={deletePackaging}>
-            <input type="hidden" name="item_id" value={open.id} />
-            <Submit className="link quiet" pendingText="กำลังลบ…">ลบรายการนี้</Submit>
-          </ActionForm>
+          <DeleteButton action={deletePackaging} fields={{ item_id: open.id }} label={open.name} block />
         </SheetFrame>
       )}
     </>

@@ -115,7 +115,7 @@ export async function ProductSheet({ p, tab, closeHref }: { p: ProductStock; tab
               ))}
               <div className="rowi noicon"><span className="k"><b>รวมต่อชิ้น</b></span><span className="v"><b>{money(cost)} บาท</b></span></div>
             </div>
-            <p className="xs muted" style={{ margin: '0 6px' }}>ทุกครั้งที่เพิ่มสต็อกกลิ่นนี้ ระบบจะตัดขวด ฝา และกล่อง อย่างละ 1 ชิ้นต่อ 1 ขวด ฝาเลือกที่หน้าโกดัง (ใช้ร่วมกันทุกกลิ่น)</p>
+            <p className="xs muted" style={{ margin: '0 6px' }}>เพิ่มสต็อก 1 ขวด = ตัดขวด ฝา กล่อง อย่างละ 1 · ฝาตั้งที่หน้าโกดัง</p>
           </div>
           <div className="group"><div className="rowi"><span className="ic"><IconLock /></span><div className="main"><div className="t1 mono">{p.sku}</div><div className="t2">SKU ล็อกแล้ว เพราะพิมพ์ลงบรรจุภัณฑ์</div></div></div></div>
         </>

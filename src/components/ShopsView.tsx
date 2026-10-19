@@ -4,7 +4,8 @@ import { getShop, getShops } from '@/lib/data'
 import { docNo, when } from '@/lib/format'
 import type { ProductStock, Shop } from '@/lib/types'
 import { ActionForm, Submit } from './ActionForm'
-import { IconOut } from './icons'
+import { DeleteButton } from './Editable'
+import { IconChevron, IconEdit, IconOut, IconPlus } from './icons'
 import { SheetFrame } from './SheetFrame'
 import { ShopActions } from './ShopActions'
 import { ShopSendSheet } from './ShopSendSheet'
@@ -26,7 +27,7 @@ function ShopForm({ shop }: { shop?: Shop }) {
   )
 }
 
-export async function ShopsView({ sp, products }: { sp: { send?: string; shop?: string; newshop?: string }; products: ProductStock[] }) {
+export async function ShopsView({ sp, products }: { sp: { send?: string; shop?: string; newshop?: string; edit?: string }; products: ProductStock[] }) {
   const shops = await getShops()
   const detail = sp.shop ? await getShop(sp.shop) : null
   const back = '/stock?view=shops'
@@ -49,10 +50,11 @@ export async function ShopsView({ sp, products }: { sp: { send?: string; shop?: 
             </Link>
           )
         })}
-        {!shops.length && <div className="empty-state">ยังไม่มีร้านค้า</div>}
+        <Link className="rowi addrow" href={`${back}&newshop=1`} scroll={false}>
+          <span className="ic"><IconPlus /></span><div className="main"><div className="t1">เพิ่มร้านค้า</div></div>
+        </Link>
       </div>
-      <Link className="link" href={`${back}&newshop=1`} scroll={false} style={{ justifySelf: 'start' }}>+ เพิ่มร้านค้า</Link>
-      <p className="xs muted" style={{ margin: 0 }}>ของที่ส่งไปฝากขายถูกตัดออกจากสต็อกกลางแล้ว ตัวเลขในหน้านี้คือของที่ยังอยู่ที่ร้าน</p>
+      <p className="xs muted" style={{ margin: 0 }}>ตัวเลขคือของที่ยังอยู่ที่ร้าน (ตัดจากสต็อกกลางแล้ว)</p>
 
       {sp.send && (
         <SheetFrame closeHref={back} head={<h2>ส่งของให้ร้าน</h2>}>
@@ -66,7 +68,15 @@ export async function ShopsView({ sp, products }: { sp: { send?: string; shop?: 
         </SheetFrame>
       )}
 
-      {detail && (
+      {detail && sp.edit && (
+        <SheetFrame closeHref={`${back}&shop=${detail.shop.id}`} head={<div><div className="xs muted">แก้ไขข้อมูลร้าน</div><h2>{detail.shop.name}</h2></div>}>
+          <ShopForm shop={detail.shop} />
+          <DeleteButton action={deleteShop} fields={{ shop_id: detail.shop.id }} label={detail.shop.name} block />
+          <p className="xs muted" style={{ margin: 0, textAlign: 'center' }}>ลบแล้ว ใบส่งของและประวัติยังเก็บไว้</p>
+        </SheetFrame>
+      )}
+
+      {detail && !sp.edit && (
         <SheetFrame closeHref={back} head={<div><div className="xs muted">ร้านฝากขาย</div><h2>{detail.shop.name}</h2></div>}>
           <div className="group">
             {detail.stock.filter((l) => l.qty > 0).map((l) => (
@@ -110,17 +120,19 @@ export async function ShopsView({ sp, products }: { sp: { send?: string; shop?: 
             </div>
           </div>
 
-          <details className="formcard">
-            <summary className="link quiet">แก้ไขข้อมูลร้าน / ลบร้าน</summary>
-            <div className="sect" style={{ marginTop: 12 }}>
-              <ShopForm shop={detail.shop} />
-              <ActionForm action={deleteShop}>
-                <input type="hidden" name="shop_id" value={detail.shop.id} />
-                <Submit className="link quiet" pendingText="กำลังลบ…">ลบร้านนี้</Submit>
-              </ActionForm>
-              <p className="xs muted" style={{ margin: 0 }}>ลบแล้วร้านจะหายจากรายการ แต่ใบส่งของและประวัติยังเก็บไว้</p>
+          <div className="sect">
+            <span className="cap">ข้อมูลร้าน</span>
+            <div className="group">
+              <Link className="rowi" href={`${back}&shop=${detail.shop.id}&edit=1`} scroll={false}>
+                <span className="ic"><IconEdit /></span>
+                <div className="main">
+                  <div className="t1">{[detail.shop.contact, detail.shop.phone].filter(Boolean).join(' · ') || 'ยังไม่มีผู้ติดต่อ'}</div>
+                  <div className="t2">{detail.shop.address || 'ยังไม่มีที่อยู่'}</div>
+                </div>
+                <IconChevron />
+              </Link>
             </div>
-          </details>
+          </div>
         </SheetFrame>
       )}
     </>

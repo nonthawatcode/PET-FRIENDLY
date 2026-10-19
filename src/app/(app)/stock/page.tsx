@@ -7,6 +7,7 @@ import { IconCamera, IconIn } from '@/components/icons'
 import { MoveRow } from '@/components/MoveRow'
 import { OrderSheet } from '@/components/OrderSheet'
 import { ProductSheet } from '@/components/ProductSheet'
+import { EditableList } from '@/components/Editable'
 import { SheetFrame } from '@/components/SheetFrame'
 import { ShopsView } from '@/components/ShopsView'
 import { getCategories, getMovements, getProducts, getUnmappedSkus } from '@/lib/data'
@@ -14,7 +15,7 @@ import { PLATFORM } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-type SP = { sku?: string; tab?: string; new?: string; moves?: string; order?: string; receive?: string; cat?: string; cats?: string; view?: string; send?: string; shop?: string; newshop?: string }
+type SP = { sku?: string; tab?: string; new?: string; moves?: string; order?: string; receive?: string; cat?: string; cats?: string; view?: string; send?: string; shop?: string; newshop?: string; edit?: string }
 
 export default async function StockPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
@@ -117,31 +118,10 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
       {open && <ProductSheet p={open} tab={sp.tab ?? 'stock'} closeHref={back} />}
       {sp.cats && (
         <SheetFrame closeHref={back} head={<h2>หมวดหมู่</h2>}>
-          <ActionForm action={createCategory} className="formcard" resetOnSuccess>
-            <div className="field"><label htmlFor="cn">เพิ่มหมวดใหม่</label><input id="cn" name="name" className="input" required placeholder="เช่น น้ำหอม" /></div>
-            <Submit>เพิ่มหมวด</Submit>
-          </ActionForm>
-          {categories.length > 0 && (
-            <div className="sect">
-              <span className="cap">แก้ชื่อ / ลบหมวด</span>
-              {categories.map((c) => (
-                <div key={c.id} className="formcard">
-                  <ActionForm action={renameCategory}>
-                    <input type="hidden" name="category_id" value={c.id} />
-                    <div className="row" style={{ gap: 10, flexWrap: 'nowrap' }}>
-                      <input name="name" className="input" defaultValue={c.name} required aria-label="ชื่อหมวด" style={{ flex: 1 }} />
-                      <Submit className="btn">บันทึก</Submit>
-                    </div>
-                  </ActionForm>
-                  <ActionForm action={deleteCategory}>
-                    <input type="hidden" name="category_id" value={c.id} />
-                    <Submit className="link quiet" pendingText="กำลังลบ…">ลบหมวดนี้</Submit>
-                  </ActionForm>
-                </div>
-              ))}
-            </div>
-          )}
-          <p className="xs muted" style={{ margin: 0 }}>ใส่สินค้าเข้าหมวด: กดการ์ดสินค้า → แท็บ “ข้อมูล” → เลือกหมวดหมู่ · ลบหมวดแล้ว สินค้าในหมวดนั้นจะกลายเป็น “ไม่มีหมวด” (สินค้าไม่หาย)</p>
+          <EditableList items={categories.map((c) => ({ key: c.id, name: c.name, sub: `${products.filter((p) => p.category_id === c.id).length} สินค้า` }))}
+            add={createCategory} rename={renameCategory} remove={deleteCategory} field={{ id: 'category_id' }}
+            addLabel="เพิ่มหมวด" placeholder="ชื่อหมวด เช่น น้ำหอม" />
+          <p className="xs muted" style={{ margin: 0 }}>ใส่สินค้าเข้าหมวดได้ที่ การ์ดสินค้า → ข้อมูล</p>
         </SheetFrame>
       )}
       {sp.order && <OrderSheet id={sp.order} closeHref="/stock" />}

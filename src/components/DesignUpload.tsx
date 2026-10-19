@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { addDesignFile } from '@/app/actions'
 import { createClient } from '@/lib/supabase/client'
+import { IconPlus } from './icons'
 
 const MAX = 50 * 1024 * 1024 // Supabase free plan: 50 MB per file
 
@@ -34,10 +35,10 @@ export function DesignUpload() {
   }
 
   return (
-    <div className="formcard">
-      <button type="button" className="btn pri xl" disabled={!!busy} onClick={() => ref.current?.click()}>{busy || '+ อัปโหลดไฟล์ดีไซน์'}</button>
+    <div style={{ display: 'grid', gap: 8 }}>
+      <button type="button" className="btn ink" disabled={!!busy} onClick={() => ref.current?.click()}>{busy || <><IconPlus /> อัปโหลดไฟล์ดีไซน์</>}</button>
       <input ref={ref} type="file" multiple hidden onChange={(e) => { void upload(e.target.files); e.target.value = '' }} />
-      <p className="xs muted" style={{ margin: 0 }}>ไฟล์อะไรก็ได้ (AI, PSD, PDF, PNG, SVG…) ไฟล์ละไม่เกิน 50 MB · เลือกหลายไฟล์พร้อมกันได้</p>
+      <p className="xs muted" style={{ margin: 0, textAlign: 'center' }}>ทุกชนิดไฟล์ · ไฟล์ละไม่เกิน 50 MB</p>
       {msg && <p className={msg.ok ? 'fok' : 'ferr'} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
     </div>
   )

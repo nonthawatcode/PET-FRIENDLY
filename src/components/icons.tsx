@@ -54,3 +54,15 @@ export const IconWarehouse = ({ size, ...p }: P) => (
 export const IconFile = ({ size = 18, ...p }: P) => (
   <svg {...base(size, { strokeWidth: 1.8, ...p })}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
 )
+export const IconEdit = ({ size = 18, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 2, ...p })}><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></svg>
+)
+export const IconTrash = ({ size = 18, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 2, ...p })}><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+)
+export const IconPlus = ({ size = 18, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 2.2, ...p })}><path d="M12 5v14M5 12h14" /></svg>
+)
+export const IconDownload = ({ size = 18, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 2, ...p })}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+)
